@@ -47,7 +47,7 @@ def get_github_raw_links():
                     possible_files = ['sub', 'v2ray', 'node.txt', 'nodes', 'subscribe.txt', 'clash.yaml', 'clash']
                     for file in possible_files:
                         # 【核心修复】必须是 raw.githubusercontent.com 且注意各处的正斜杠 /
-                        links.append(f"https://githubusercontent.com{owner}/{repo}/{branch}/{file}")
+                        links.append(f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file}")
         except Exception as e:
             print(f"❌ 搜索关键词 '{kw}' 失败: {e}")
             
@@ -186,7 +186,7 @@ def test_tcp_connectivity(node):
     if not server or not port:
         return None
     try:
-        # 使用 Socket 尝试建立底层 TCP 连接
+        # 使用 Socket 尝试建立底层 TCP 连��
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(TIMEOUT_SECONDS)
         sock.connect((server, port))
