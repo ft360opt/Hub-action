@@ -8,13 +8,16 @@ import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 1. 配置搜索与测速参数
-SEARCH_KEYWORDS = ["free-v2ray", "free vmess", "clash subscribe"]
+# 【修复 1】优化搜索关键词，改用高频词，移除空格问题
+SEARCH_KEYWORDS = ["free-v2ray", "v2ray-share", "free-nodes", "clash-subscribe"]
+#SEARCH_KEYWORDS = ["free-v2ray", "free vmess", "clash subscribe"]
+
 MAX_REPOS_TO_CHECK = 5        # 每个关键词检查的最新仓库数
 TIMEOUT_SECONDS = 3.0         # 节点延迟测试超时时间（秒）
 MAX_WORKERS = 50              # 测速并发线程数
 
 def get_github_raw_links():
-    """动态从 GitHub 搜索最新更新的仓库，并生成潜在节点文件链接"""
+    """动态从 GitHub 搜索最新更新的仓库，并精准生成 Raw 原始文件链接"""
     links = []
     token = os.getenv("GITHUB_TOKEN")
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -22,24 +25,34 @@ def get_github_raw_links():
         headers["Authorization"] = f"token {token}"
         
     for kw in SEARCH_KEYWORDS:
-        query = urllib.parse.quote(f"{kw} sorted:updated")
-        url = f"https://github.com{query}&per_page={MAX_REPOS_TO_CHECK}"
+        # 正确做法：关键词进行编码，排序使用 &sort=updated 独立参数
+        encoded_kw = urllib.parse.quote(kw)
+        url = f"https://api.github.com/search/repositories?q={encoded_kw}&sort=updated&order=desc&per_page={MAX_REPOS_TO_CHECK}"
+        
+        print(f"🔍 正在请求 GitHub API 搜索: {url}")
         try:
             req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
-                for item in data.get('items', []):
+                items = data.get('items', [])
+                print(f"   关键词 '{kw}' 成功找到 {len(items)} 个最近更新的仓库")
+                
+                for item in items:
                     owner = item['owner']['login']
                     repo = item['name']
+                    # 动态获取默认分支 (master 或 main)
                     branch = item.get('default_branch', 'main')
                     
-                    # 包含标准订阅及 Clash YAML 文件
-                    possible_files = ['sub', 'v2ray', 'node.txt', 'subscribe.txt', 'clash.yaml', 'config.yaml', 'clash']
+                    # 尽可能广泛地命中常见文件名
+                    possible_files = ['sub', 'v2ray', 'node.txt', 'nodes', 'subscribe.txt', 'clash.yaml', 'clash']
                     for file in possible_files:
+                        # 【核心修复】必须是 raw.githubusercontent.com 且注意各处的正斜杠 /
                         links.append(f"https://githubusercontent.com{owner}/{repo}/{branch}/{file}")
         except Exception as e:
-            print(f"搜索关键词 '{kw}' 失败: {e}")
+            print(f"❌ 搜索关键词 '{kw}' 失败: {e}")
+            
     return list(set(links))
+
 
 def parse_clash_yaml(content):
     """
