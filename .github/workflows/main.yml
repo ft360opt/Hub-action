@@ -36,7 +36,7 @@ jobs:
       - name: Commit and push
         run: |
           git config user.name "GitHub Actions"
-          git config user.email "actions@://github.com"
+          git config user.email "actions@:github.com"
           git add ./data/
           # 检查是否有文件变动，有变动则提交，没有则跳过，防止 Actions 报错死循环
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto updated nodeALL.txt and nodes.txt: $(date)" && git push)
