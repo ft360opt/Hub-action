@@ -8,11 +8,25 @@ import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 1. 配置搜索与测速参数
-# 【修复 1】优化搜索关键词，改用高频词，移除空格问题
-SEARCH_KEYWORDS = ["free-v2ray", "v2ray-share", "free-nodes", "clash-subscribe"]
-#SEARCH_KEYWORDS = ["free-v2ray", "free vmess", "clash subscribe"]
+# 【优化】针对中国大陆用户的搜索关键词，包含中文和GFW绕过相关术语
+SEARCH_KEYWORDS = [
+    "v2ray-china",           # 明确指向中国用户
+    "clash-china",           # 在中国很受欢迎
+    "free-ssr",              # SSR在中国仍然流行
+    "shadowsocks-share",     # 中国常见的协议
+    "trojan-subscribe",      # 越来越流行
+    "warp-config",           # Cloudflare WARP在中国是常见的绕过方式
+    "bypass-gfw",            # 直接指向GFW绕过需求
+    "china-nodes",           # 明确的中国焦点
+    "v2ray-share",           # 保留原有的通用关键词
+    "free-nodes",            # 保留原有的通用关键词
+    "订阅",                   # 中文：订阅
+    "节点",                   # 中文：节点
+    "梯子",                   # 中文俚语：梯子（代理工具）
+    "翻墙",                   # 中文：越墙（绕过审查）
+]
 
-MAX_REPOS_TO_CHECK = 5        # 每个关键词检查的最新仓库数
+MAX_REPOS_TO_CHECK = 10       # 每个关键词检查的最新仓库数（从5增加到10以获得更多结果）
 TIMEOUT_SECONDS = 3.0         # 节点延迟测试超时时间（秒）
 MAX_WORKERS = 50              # 测速并发线程数
 
@@ -186,7 +200,7 @@ def test_tcp_connectivity(node):
     if not server or not port:
         return None
     try:
-        # 使用 Socket 尝试建立底层 TCP 连��
+        # 使用 Socket 尝试建立底层 TCP 连接
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(TIMEOUT_SECONDS)
         sock.connect((server, port))
