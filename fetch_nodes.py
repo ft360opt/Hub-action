@@ -3,9 +3,17 @@ import re
 import json
 import base64
 import socket
+import logging
 import urllib.request
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Configure logging - safe for CI/CD environments
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # 1. 配置搜索与测速参数
 # 【优化】针对中国大陆用户的搜索关键词，包含中文和GFW绕过相关术语
@@ -37,19 +45,24 @@ def get_github_raw_links():
     headers = {"User-Agent": "Mozilla/5.0"}
     if token:
         headers["Authorization"] = f"token {token}"
+        # Log safely without exposing the token
+        logger.info("✓ GitHub token loaded from environment")
+    else:
+        logger.warning("⚠ No GitHub token found, using unauthenticated requests")
         
     for kw in SEARCH_KEYWORDS:
         # 正确做法：关键词进行编码，排序使用 &sort=updated 独立参数
         encoded_kw = urllib.parse.quote(kw)
         url = f"https://api.github.com/search/repositories?q={encoded_kw}&sort=updated&order=desc&per_page={MAX_REPOS_TO_CHECK}"
         
-        print(f"🔍 正在请求 GitHub API 搜索: {url}")
+        # Safe logging: show keyword instead of full URL
+        logger.info(f"🔍 Searching repositories with keyword: '{kw}'")
         try:
             req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 items = data.get('items', [])
-                print(f"   关键词 '{kw}' 成功找到 {len(items)} 个最近更新的仓库")
+                logger.info(f"   Found {len(items)} recently updated repos for '{kw}'")
                 
                 for item in items:
                     owner = item['owner']['login']
@@ -63,7 +76,9 @@ def get_github_raw_links():
                         # 【核心修复】必须是 raw.githubusercontent.com 且注意各处的正斜杠 /
                         links.append(f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file}")
         except Exception as e:
-            print(f"❌ 搜索关键词 '{kw}' 失败: {e}")
+            # Safe error logging without exposing sensitive details
+            logger.error(f"❌ Failed to search keyword '{kw}': {type(e).__name__}")
+            logger.debug(f"   Error details: {str(e)}")
             
     return list(set(links))
 
@@ -166,8 +181,8 @@ def extract_and_decode(url):
                 line = line.strip()
                 if re.match(protocol_pattern, line):
                     nodes.append(line)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Failed to extract nodes from URL: {type(e).__name__}")
     return nodes
 
 def parse_server_port(node):
@@ -210,15 +225,15 @@ def test_tcp_connectivity(node):
         return None  # 连接失败或超时，剔除
 
 def main():
-    print("1. 正在检索最新的 GitHub 节点仓库...")
+    logger.info("1. Retrieving latest GitHub node repositories...")
     raw_urls = get_github_raw_links()
-    print(f"共发现 {len(raw_urls)} 个潜在的目标文件链接。")
+    logger.info(f"Found {len(raw_urls)} potential target file links.")
     
     # 2. 抓取与清洗
     all_raw_nodes = []
     for url in raw_urls:
         all_raw_nodes.extend(extract_and_decode(url))
-    print(f"2. 节点提取完成。原始总数: {len(all_raw_nodes)}")
+    logger.info(f"2. Node extraction complete. Raw total: {len(all_raw_nodes)}")
     
     # 3. 绝对去重（去除节点名影响）
     unique_nodes = []
@@ -228,17 +243,17 @@ def main():
         if signature and signature not in seen_signatures:
             seen_signatures.add(signature)
             unique_nodes.append(node)
-    print(f"3. 核心去重完成。剩余独立节点: {len(unique_nodes)}")
+    logger.info(f"3. Core deduplication complete. Remaining unique nodes: {len(unique_nodes)}")
     
     # 【新增】将未测速的原始节点列表进行 Base64 编码并保存到 data/nodeALL.txt
     all_merged_text = "\n".join(unique_nodes)
     all_b64_output = base64.b64encode(all_merged_text.encode('utf-8')).decode('utf-8')
     with open("data/nodeALL.txt", "w", encoding="utf-8") as f:
         f.write(all_b64_output)
-    print("📝 原始独立节点列表已保存至: data/nodeALL.txt")
+    logger.info("📝 Raw unique node list saved to: data/nodeALL.txt")
     
     # 4. 高并发多线程测速筛选
-    print(f"4. 开始多线程并发测速 (线程数: {MAX_WORKERS})...")
+    logger.info(f"4. Starting multi-threaded speed test (threads: {MAX_WORKERS})...")
     live_nodes = []
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(test_tcp_connectivity, node): node for node in unique_nodes}
@@ -247,7 +262,7 @@ def main():
             if res:
                 live_nodes.append(res)
                 
-    print(f"5. 筛选完毕。存活可用节点数: {len(live_nodes)} / {len(unique_nodes)}")
+    logger.info(f"5. Filtering complete. Live usable nodes: {len(live_nodes)} / {len(unique_nodes)}")
     
     # 5. 打包测速通过的节点为 Base64 格式并保存到 data/nodes.txt
     merged_text = "\n".join(live_nodes)
@@ -256,7 +271,7 @@ def main():
     with open("data/nodes.txt", "w", encoding="utf-8") as f:
         f.write(b64_output)
         
-    print("🎉 自动化流程全部结束，测速通过订阅已成功保存至: data/nodes.txt")
+    logger.info("🎉 Automation complete, speed-tested subscription saved to: data/nodes.txt")
 
 if __name__ == "__main__":
     main()
