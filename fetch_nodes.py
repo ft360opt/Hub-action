@@ -39,7 +39,7 @@ SEARCH_KEYWORDS = [
     "翻墙",
 ]
 
-MAX_REPOS_PER_KEYWORD = 20
+MAX_REPOS_PER_KEYWORD = 10
 MAX_WORKERS = 80
 TIMEOUT_SECONDS = 5
 ENABLE_TCP_CHECK = True
@@ -146,6 +146,8 @@ def search_repositories():
             )
 
             for item in items:
+                if item.get("size",0) > 50000:
+                    continue
                 repos.append({
                     "owner": item["owner"]["login"],
                     "repo": item["name"],
@@ -180,7 +182,9 @@ def get_repo_files(owner, repo, branch):
 
     found_files = []
 
-    def walk(path=""):
+    def walk(path="",depth=0):
+        if depth > 2:
+             return
 
         api = (
             f"https://api.github.com/repos/"
@@ -216,7 +220,7 @@ def get_repo_files(owner, repo, branch):
                     if any(s in item_path.lower() for s in skip_dirs):
                         continue
 
-                    walk(item_path)
+                    walk(item_path,depth+1)
 
                 elif item_type == "file":
 
@@ -568,10 +572,12 @@ def main():
                 pass
 
     urls = list(set(urls))
+    MAX_FILES=800
+    if len(urls) > MAX_FILES:
 
-    logger.info(
-        f"Potential files found: {len(urls)}"
-    )
+        logger.info(f"File cap applied: "f"{len(urls)} -> {MAX_FILES}")
+        urls = urls[:MAX_FILES]
+        logger.info(f"Potential files found: {len(urls)}")
 
     # 3 extract nodes
     logger.info(
@@ -673,7 +679,7 @@ def main():
                     node
                 ): node
 
-                for node in unique_nodes
+                for node in unique_nodes[:3000]
             }
 
             checked = 0
