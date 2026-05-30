@@ -24,6 +24,9 @@ jobs:
         with:
           python-version: '3.12' # 保持你要求的最新 Python 3.12 版本
 
+      - name: Install dependencies
+        run: pip install pyyaml
+
       - name: Execute Fetch Script
         env:
           # 关键一步：注入内置 Token，防止 Python 脚本搜索 GitHub API 时被限流
