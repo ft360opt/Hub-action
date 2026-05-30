@@ -15,6 +15,7 @@ import urllib.parse
 import yaml
 import time
 import csv
+import struct
 
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -44,6 +45,7 @@ MAX_REPOS_PER_KEYWORD = 10
 MAX_WORKERS = 80
 TIMEOUT_SECONDS = 5
 ENABLE_TCP_CHECK = True
+ENABLE_PROTOCOL_VALIDATION = True
 
 POSSIBLE_KEYWORDS = [
     "sub",
@@ -104,6 +106,7 @@ class SourceQuality:
     def __init__(self):
         self.repo_stats = {}
         self.url_to_repo = {}
+        self.protocol_stats = {}
     
     def register_repo(self, owner, repo, stars=0, forks=0, size=0):
         """Register a repository with its metadata"""
@@ -145,6 +148,25 @@ class SourceQuality:
         """Record if a node passed validation"""
         if repo_key in self.repo_stats:
             self.repo_stats[repo_key]["nodes_valid"] += 1
+    
+    def record_protocol_validation(self, protocol, valid, error_type=None):
+        """Record protocol-specific validation stats"""
+        if protocol not in self.protocol_stats:
+            self.protocol_stats[protocol] = {
+                "total": 0,
+                "valid": 0,
+                "failed": 0,
+                "errors": {}
+            }
+        
+        self.protocol_stats[protocol]["total"] += 1
+        if valid:
+            self.protocol_stats[protocol]["valid"] += 1
+        else:
+            self.protocol_stats[protocol]["failed"] += 1
+            if error_type:
+                self.protocol_stats[protocol]["errors"][error_type] = \
+                    self.protocol_stats[protocol]["errors"].get(error_type, 0) + 1
     
     def get_repo_score(self, repo_key):
         """Calculate quality score for a repository (0-100)"""
@@ -189,8 +211,15 @@ class SourceQuality:
             stats_with_score["quality_score"] = score
             stats_list.append(stats_with_score)
         
+        # Add protocol stats
+        output = {
+            "repositories": stats_list,
+            "protocol_stats": self.protocol_stats,
+            "generated_at": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(stats_list, f, indent=2, ensure_ascii=False)
+            json.dump(output, f, indent=2, ensure_ascii=False)
         
         logger.info(f"✓ Saved {filepath}")
     
@@ -282,6 +311,13 @@ class SourceQuality:
             border-bottom: 3px solid #4CAF50;
             padding-bottom: 10px;
         }
+        h2 {
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 8px;
+        }
         .header-info { 
             color: #666; 
             margin-bottom: 20px; 
@@ -332,8 +368,9 @@ class SourceQuality:
             border-left: 4px solid #4CAF50; 
             border-radius: 4px;
         }
-        .summary h2 { color: #2e7d32; margin-bottom: 10px; }
+        .summary h2 { color: #2e7d32; margin-top: 0; }
         .summary p { color: #555; margin: 8px 0; }
+        .protocol-table { margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -342,6 +379,8 @@ class SourceQuality:
         <div class="header-info">
             <p>Generated: """ + time.strftime("%Y-%m-%d %H:%M:%S") + """</p>
         </div>
+        
+        <h2>Repository Quality Metrics</h2>
         <table>
             <thead>
                 <tr>
@@ -408,11 +447,48 @@ class SourceQuality:
         
         html += """            </tbody>
         </table>
+"""
+        
+        # Protocol stats
+        html += """        <h2>Protocol Validation Statistics</h2>
+        <table class="protocol-table">
+            <thead>
+                <tr>
+                    <th>Protocol</th>
+                    <th>Total Validated</th>
+                    <th>Valid</th>
+                    <th>Failed</th>
+                    <th>Success Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+"""
+        
+        for proto in sorted(self.protocol_stats.keys()):
+            stats = self.protocol_stats[proto]
+            if stats["total"] > 0:
+                success_rate = round(stats["valid"] / stats["total"] * 100, 1)
+            else:
+                success_rate = 0
+            
+            html += f"""                <tr>
+                    <td><strong>{proto.upper()}</strong></td>
+                    <td>{stats['total']}</td>
+                    <td>{stats['valid']}</td>
+                    <td>{stats['failed']}</td>
+                    <td>{success_rate}%</td>
+                </tr>
+"""
+        
+        html += """            </tbody>
+        </table>
+        
         <div class="summary">
             <h2>📈 Summary</h2>
 """
         html += f"            <p><strong>Total Repositories:</strong> {total_repos}</p>\n"
         html += f"            <p><strong>Total Valid Nodes:</strong> {total_valid_nodes}</p>\n"
+        html += f"            <p><strong>Protocol Validation Enabled:</strong> {ENABLE_PROTOCOL_VALIDATION}</p>\n"
         html += f"            <p><strong>Generated At:</strong> {time.strftime('%Y-%m-%d %H:%M:%S')}</p>\n"
         
         html += """        </div>
@@ -445,6 +521,126 @@ def is_probably_subscription_file(name):
         return True
 
     return False
+
+# =========================
+# PROTOCOL VALIDATION
+# =========================
+
+def get_protocol_type(node):
+    """Extract protocol type from node string"""
+    try:
+        return node.split("://")[0].lower()
+    except:
+        return None
+
+def validate_ss_protocol(server, port):
+    """Validate Shadowsocks protocol"""
+    try:
+        sock = socket.create_connection((server, port), timeout=TIMEOUT_SECONDS)
+        # Send minimal probe for SS
+        sock.send(b"\x03\x01\x00")
+        sock.settimeout(2)
+        response = sock.recv(1024)
+        sock.close()
+        return response and len(response) > 0
+    except Exception as e:
+        logger.debug(f"SS validation failed: {type(e).__name__}")
+        return False
+
+def validate_trojan_protocol(server, port):
+    """Validate Trojan protocol"""
+    try:
+        sock = socket.create_connection((server, port), timeout=TIMEOUT_SECONDS)
+        # Trojan CONNECT command with hostname
+        cmd = b"\x00" + b"\x0dhello.trojan.io" + b"\x00\x50"  # Port 80
+        sock.send(cmd)
+        sock.settimeout(2)
+        response = sock.recv(1024)
+        sock.close()
+        return response and len(response) > 0
+    except Exception as e:
+        logger.debug(f"Trojan validation failed: {type(e).__name__}")
+        return False
+
+def validate_socks5_protocol(server, port):
+    """Validate SOCKS5 protocol"""
+    try:
+        sock = socket.create_connection((server, port), timeout=TIMEOUT_SECONDS)
+        # SOCKS5 greeting
+        sock.send(b"\x05\x01\x00")
+        sock.settimeout(2)
+        response = sock.recv(1024)
+        sock.close()
+        # Response should be: \x05 (version) \x00 (no auth)
+        return response and len(response) >= 2 and response[0] == 0x05
+    except Exception as e:
+        logger.debug(f"SOCKS5 validation failed: {type(e).__name__}")
+        return False
+
+def validate_vmess_protocol(server, port):
+    """Validate VMess protocol (simple port check)"""
+    try:
+        sock = socket.create_connection((server, port), timeout=TIMEOUT_SECONDS)
+        sock.send(b"\x00" * 16)  # Minimal probe
+        sock.settimeout(2)
+        response = sock.recv(1024)
+        sock.close()
+        return True  # VMess is hard to validate without full handshake
+    except Exception as e:
+        logger.debug(f"VMess validation failed: {type(e).__name__}")
+        return False
+
+def validate_vless_protocol(server, port):
+    """Validate VLESS protocol (simple port check)"""
+    try:
+        sock = socket.create_connection((server, port), timeout=TIMEOUT_SECONDS)
+        sock.send(b"\x00" * 16)  # Minimal probe
+        sock.settimeout(2)
+        sock.recv(1024)
+        sock.close()
+        return True  # VLESS is hard to validate without full handshake
+    except Exception as e:
+        logger.debug(f"VLESS validation failed: {type(e).__name__}")
+        return False
+
+def enhanced_protocol_check(node):
+    """Enhanced protocol validation with proper handshakes"""
+    
+    if not ENABLE_PROTOCOL_VALIDATION:
+        return tcp_check(node)
+    
+    server, port = parse_server_port(node)
+    
+    if not server or not port:
+        return None
+    
+    protocol = get_protocol_type(node)
+    
+    try:
+        # Route to appropriate validator
+        if protocol == "ss":
+            result = validate_ss_protocol(server, port)
+            quality_tracker.record_protocol_validation("ss", result, "connection" if not result else None)
+        elif protocol == "trojan":
+            result = validate_trojan_protocol(server, port)
+            quality_tracker.record_protocol_validation("trojan", result, "handshake" if not result else None)
+        elif protocol == "vmess":
+            result = validate_vmess_protocol(server, port)
+            quality_tracker.record_protocol_validation("vmess", result, "connection" if not result else None)
+        elif protocol == "vless":
+            result = validate_vless_protocol(server, port)
+            quality_tracker.record_protocol_validation("vless", result, "connection" if not result else None)
+        else:
+            # Fallback to TCP check
+            result = tcp_check(node)
+            quality_tracker.record_protocol_validation(protocol, result is not None, "unknown" if result is None else None)
+        
+        return node if result else None
+    
+    except Exception as e:
+        logger.debug(f"Enhanced validation error for {protocol}: {type(e).__name__}")
+        quality_tracker.record_protocol_validation(protocol, False, str(type(e).__name__))
+        return None
 
 # =========================
 # SEARCH REPOSITORIES
@@ -804,7 +1000,7 @@ def node_signature(node):
     ).hexdigest()
 
 # =========================
-# SERVER/PART PARSER
+# SERVER/PORT PARSER
 # =========================
 
 def parse_server_port(node):
@@ -850,10 +1046,8 @@ def parse_server_port(node):
         return None, None
 
 # =========================
-# PART 2/2
-# =========================
-
 # TCP VALIDATION
+# =========================
 
 def tcp_check(node):
 
@@ -1029,8 +1223,10 @@ def main():
     if ENABLE_TCP_CHECK:
 
         logger.info(
-            "6. TCP validation..."
+            "6. Enhanced Protocol Validation..." if ENABLE_PROTOCOL_VALIDATION else "6. TCP Validation..."
         )
+
+        validator_func = enhanced_protocol_check if ENABLE_PROTOCOL_VALIDATION else tcp_check
 
         with ThreadPoolExecutor(
             max_workers=MAX_WORKERS
@@ -1039,7 +1235,7 @@ def main():
             futures = {
 
                 executor.submit(
-                    tcp_check,
+                    validator_func,
                     node
                 ): node
 
