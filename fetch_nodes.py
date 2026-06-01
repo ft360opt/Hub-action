@@ -211,11 +211,17 @@ def main():
     current_year = time.strftime("%Y")
 
     for keyword in SEARCH_KEYWORDS:
-        query = urllib.parse.quote(f"{keyword} pushed:>{current_year}-01-01 sort:updated")
-        url = f"https://github.com{query}&per_page={MAX_REPOS_PER_KEYWORD}"
+        #query = urllib.parse.quote(f"{keyword} pushed:>{current_year}-01-01 sort:updated")
+        #url = f"https://github.com{query}&per_page={MAX_REPOS_PER_KEYWORD}"
+        url = "https://github.com"
+        params = {
+            "q": f"{keyword} pushed:>{current_year}-01-01 sort:updated",
+            "per_page": MAX_REPOS_PER_KEYWORD
+        }
         
         try:
-            res = session.get(url, timeout=10)
+            #res = session.get(url, timeout=10)
+            res = session.get(url, params=params, timeout=10)
             if res.status_code != 200: continue
             data = res.json()
         except Exception as e:
