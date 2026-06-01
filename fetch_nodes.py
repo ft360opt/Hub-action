@@ -7,6 +7,7 @@ import logging
 import time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
 
 # External Libraries
 import requests
@@ -24,8 +25,20 @@ SEARCH_KEYWORDS = [
 MAX_REPOS_PER_KEYWORD = 5
 MAX_WORKERS = 40
 TIMEOUT_SECONDS = 4
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB limit
-MAX_PROXIES_PER_FILE = 1000  # Safety ceiling for proxy parsing
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB limit
+MAX_PROXIES_PER_FILE = 500
+MAX_FOLDER_DEPTH = 3  # Node configs are typically at root or 1-2 levels deep
+STALE_DAYS = 30  # Skip files not updated in 30+ days (likely archived/bloat)
+
+# Repos to skip - typically frontend-heavy with no node configs
+SKIP_REPO_PATTERNS = [
+    r"\.github\.io$",  # GitHub Pages sites
+    r"blog",
+    r"website",
+    r"tutorial",
+    r"docker",
+    r"awesome",
+]
 
 OUTPUT_DIR = Path("data")
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -96,6 +109,98 @@ class RepoTracker:
             logger.error(f"Failed to write quality stats: {e}")
 
 tracker = RepoTracker()
+
+# =========================
+# INTELLIGENT FILE FILTERING LAYER
+# =========================
+def should_skip_repo(repo_name):
+    """Check if repo matches skip patterns (likely frontend/bloated)."""
+    for pattern in SKIP_REPO_PATTERNS:
+        if re.search(pattern, repo_name, re.IGNORECASE):
+            logger.info(f"Skipping {repo_name} (matches pattern: {pattern})")
+            return True
+    return False
+
+def calculate_folder_depth(path):
+    """Calculate folder depth: root=0, a/b=1, a/b/c=2, etc."""
+    return path.count(os.sep)
+
+def is_file_recent(commit_date_str):
+    """Check if file was updated within STALE_DAYS."""
+    try:
+        if not commit_date_str:
+            return True  # No date info, assume recent
+        
+        # Parse ISO format date from GitHub API
+        file_date = datetime.fromisoformat(commit_date_str.replace('Z', '+00:00'))
+        cutoff_date = datetime.now(file_date.tzinfo) - timedelta(days=STALE_DAYS)
+        
+        is_recent = file_date >= cutoff_date
+        if not is_recent:
+            logger.debug(f"File stale: last commit {commit_date_str} > {STALE_DAYS} days ago")
+        return is_recent
+    except Exception as e:
+        logger.debug(f"Failed to check file recency: {e}")
+        return True  # Default to accepting if date parsing fails
+
+def is_file_likely_nodes(path, file_size, commit_date=None):
+    """Intelligent file filtering based on name, size, depth, and recency."""
+    path_lower = path.lower()
+    depth = calculate_folder_depth(path)
+    
+    # RECENCY FILTER: Skip stale files (likely archived/unmaintained)
+    if commit_date and not is_file_recent(commit_date):
+        logger.debug(f"Skipping {path}: not updated in {STALE_DAYS} days")
+        return False
+    
+    # DEPTH FILTER: Node configs are almost never deeply nested
+    if depth > MAX_FOLDER_DEPTH:
+        logger.debug(f"Skipping {path}: depth {depth} > {MAX_FOLDER_DEPTH}")
+        return False
+    
+    # SIZE FILTER: Legitimate node configs are <100KB
+    if file_size > MAX_FILE_SIZE:
+        logger.debug(f"Skipping {path}: size {file_size} bytes > {MAX_FILE_SIZE}")
+        return False
+    
+    # WHITELIST EXTENSIONS: Only parse these file types
+    ALLOWED_EXTENSIONS = [".txt", ".yaml", ".yml", ".json", ".sub", ".subscribe"]
+    has_node_ext = any(path_lower.endswith(ext) for ext in ALLOWED_EXTENSIONS)
+    if not has_node_ext:
+        return False
+    
+    # BLACKLIST PATTERNS: Skip known bloat files regardless of extension
+    BLOAT_PATTERNS = [
+        r"\.min\.(js|css)$",        # Minified assets
+        r"node_modules",             # NPM dependencies
+        r"dist/",                    # Build output
+        r"build/",                   # Build output
+        r"\.next/",                  # Next.js cache
+        r"\.webpack",                # Webpack cache
+        r"coverage/",                # Test coverage
+        r"\.test\.",                 # Test files
+        r"\.spec\.",                 # Spec files
+        r"(vendor|lib|third_party)", # Vendored code
+        r"\.git/",                   # Git metadata
+    ]
+    for pattern in BLOAT_PATTERNS:
+        if re.search(pattern, path_lower):
+            logger.debug(f"Skipping {path}: matches bloat pattern {pattern}")
+            return False
+    
+    # SMART NAME HEURISTICS: Prioritize files that look like node configs
+    GOOD_NAMES = [
+        "node", "proxy", "subscribe", "config", "clash", "v2ray", 
+        "trojan", "ssr", "vmess", "vless", "free", "list"
+    ]
+    has_good_name = any(name in path_lower for name in GOOD_NAMES)
+    
+    # ACCEPT if: good name + shallow depth, OR minimal bloat signature
+    if has_good_name or depth <= 1:
+        return True
+    
+    logger.debug(f"Skipping {path}: no good name patterns and depth {depth} > 1")
+    return False
 
 # =========================
 # HIGH-PERFORMANCE PARSING LAYER
@@ -265,6 +370,11 @@ def main():
 
         for item in data.get("items", []):
             repo_name = item["full_name"]
+            
+            # Skip repo if it matches bloat patterns
+            if should_skip_repo(repo_name):
+                continue
+            
             if repo_name in processed_repos:
                 continue
             processed_repos.add(repo_name)
@@ -305,19 +415,24 @@ def main():
             repo_raw_nodes = []
             for file_obj in files_data.get("tree", []):
                 path = file_obj.get("path", "")
-                if any(path.lower().endswith(ext) for ext in [".txt", ".yaml", ".yml", ".json", ".sub", ".subscribe"]):
-                    # Use raw.githubusercontent.com for raw file content
-                    raw_url = f"https://raw.githubusercontent.com/{repo_name}/{branch}/{path}"
-                    try:
-                        content_res = session.get(raw_url, timeout=7)
-                        if content_res.status_code == 200:
-                            extracted = decode_and_extract(content_res.content, path)
-                            repo_raw_nodes.extend(extracted)
-                            for node in extracted:
-                                tracker.track_node_source(node, repo_name)
-                    except Exception as e:
-                        logger.debug(f"Failed to fetch {raw_url}: {e}")
-                        continue
+                file_size = file_obj.get("size", 0)
+                
+                # INTELLIGENT FILTERING: depth + size + name + patterns + recency
+                if not is_file_likely_nodes(path, file_size):
+                    continue
+                
+                # Use raw.githubusercontent.com for raw file content
+                raw_url = f"https://raw.githubusercontent.com/{repo_name}/{branch}/{path}"
+                try:
+                    content_res = session.get(raw_url, timeout=7)
+                    if content_res.status_code == 200:
+                        extracted = decode_and_extract(content_res.content, path)
+                        repo_raw_nodes.extend(extracted)
+                        for node in extracted:
+                            tracker.track_node_source(node, repo_name)
+                except Exception as e:
+                    logger.debug(f"Failed to fetch {raw_url}: {e}")
+                    continue
 
             if repo_raw_nodes:
                 repo_raw_nodes = list(set(repo_raw_nodes))
