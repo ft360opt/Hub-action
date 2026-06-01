@@ -4,57 +4,41 @@
       "repository": "ebrasha/free-v2ray-public-list",
       "stars": 871,
       "forks": 121,
-      "extracted_nodes": 75295,
-      "valid_nodes": 6965,
+      "extracted_nodes": 3000,
+      "valid_nodes": 261,
       "quality_score": 100
-    },
-    {
-      "repository": "WLget/V2Ray_configs_64",
-      "stars": 257,
-      "forks": 25,
-      "extracted_nodes": 88,
-      "valid_nodes": 10,
-      "quality_score": 100
-    },
-    {
-      "repository": "hello-world-1989/cn-news",
-      "stars": 430,
-      "forks": 18,
-      "extracted_nodes": 8,
-      "valid_nodes": 2,
-      "quality_score": 98.0
     },
     {
       "repository": "MohammadBahemmat/V2ray-Collector",
       "stars": 42,
       "forks": 64,
-      "extracted_nodes": 454,
-      "valid_nodes": 9,
+      "extracted_nodes": 554,
+      "valid_nodes": 12,
       "quality_score": 93.6
     },
     {
-      "repository": "clashv2ray-hub/clashfree",
-      "stars": 250,
-      "forks": 9,
-      "extracted_nodes": 38,
-      "valid_nodes": 23,
-      "quality_score": 89.0
-    },
-    {
-      "repository": "tglaoshiji/nodeshare",
-      "stars": 169,
-      "forks": 7,
-      "extracted_nodes": 801,
-      "valid_nodes": 121,
-      "quality_score": 87.0
+      "repository": "nodesfree/v2raynode",
+      "stars": 79,
+      "forks": 10,
+      "extracted_nodes": 66,
+      "valid_nodes": 28,
+      "quality_score": 90.0
     },
     {
       "repository": "wenxig/free-nodes-sub",
       "stars": 49,
       "forks": 6,
       "extracted_nodes": 391,
-      "valid_nodes": 208,
+      "valid_nodes": 207,
       "quality_score": 85.2
+    },
+    {
+      "repository": "nodesfree/clashnode",
+      "stars": 69,
+      "forks": 4,
+      "extracted_nodes": 79,
+      "valid_nodes": 6,
+      "quality_score": 84.0
     },
     {
       "repository": "Pawdroid/Free-servers",
@@ -89,12 +73,36 @@
       "quality_score": 60
     },
     {
-      "repository": "v2raynnodes/clashfree",
-      "stars": 6,
-      "forks": 1,
-      "extracted_nodes": 1302,
-      "valid_nodes": 409,
-      "quality_score": 45.8
+      "repository": "bq2015/FreeProxies",
+      "stars": 610,
+      "forks": 156,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 60
+    },
+    {
+      "repository": "rcy1314/Rss-Translation",
+      "stars": 77,
+      "forks": 60,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 60
+    },
+    {
+      "repository": "Alvin9999-newpac/fanqiang",
+      "stars": 1998,
+      "forks": 244,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 60
+    },
+    {
+      "repository": "clashv2ray-hub/clashfree",
+      "stars": 250,
+      "forks": 9,
+      "extracted_nodes": 38,
+      "valid_nodes": 0,
+      "quality_score": 49.0
     },
     {
       "repository": "marshall888666/free_clash_subscribe",
@@ -105,8 +113,24 @@
       "quality_score": 45.6
     },
     {
+      "repository": "find-xposed-magisk/vercel-reverse-proxy",
+      "stars": 29,
+      "forks": 43,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 43.2
+    },
+    {
       "repository": "junjun266/FreeProxyGo",
       "stars": 99,
+      "forks": 2,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 42.0
+    },
+    {
+      "repository": "ChaselDutt/VPN-Deep-Test",
+      "stars": 75,
       "forks": 2,
       "extracted_nodes": 0,
       "valid_nodes": 0,
@@ -117,7 +141,7 @@
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 143,
-      "valid_nodes": 136,
+      "valid_nodes": 138,
       "quality_score": 40.8
     },
     {
@@ -137,14 +161,6 @@
       "quality_score": 22.4
     },
     {
-      "repository": "toml66l/fanqiang",
-      "stars": 18,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 14.4
-    },
-    {
       "repository": "maiyulao/ResoHub",
       "stars": 14,
       "forks": 1,
@@ -159,14 +175,6 @@
       "extracted_nodes": 480,
       "valid_nodes": 0,
       "quality_score": 11.6
-    },
-    {
-      "repository": "xxcdd/web2rss",
-      "stars": 7,
-      "forks": 3,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 8.6
     },
     {
       "repository": "AlchemyLink/Raven-subscribe",
@@ -191,14 +199,6 @@
       "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 2.6
-    },
-    {
-      "repository": "zhaolinger9902/china-cryptos",
-      "stars": 3,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 2.4
     },
     {
       "repository": "SANTOSHPATIL2004/Telegram-Proxy",
@@ -271,15 +271,7 @@
       "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 0.0
-    },
-    {
-      "repository": "cys92096/python-xray-argo",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
     }
   ],
-  "updated_at": "2026-06-01 04:31:07"
+  "updated_at": "2026-06-01 04:47:34"
 }
