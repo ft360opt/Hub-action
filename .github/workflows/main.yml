@@ -23,9 +23,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12' # 保持你要求的最新 Python 3.12 版本
+          cache: 'pip' # Speeds up execution by caching pip packages
 
       - name: Install dependencies
-        run: pip install pyyaml
+        run: pip install pyyaml requests
 
       - name: Execute Fetch Script
         env:
