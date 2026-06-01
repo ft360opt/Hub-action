@@ -24,6 +24,8 @@ SEARCH_KEYWORDS = [
 MAX_REPOS_PER_KEYWORD = 5
 MAX_WORKERS = 40
 TIMEOUT_SECONDS = 4
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB limit
+MAX_PROXIES_PER_FILE = 1000  # Safety ceiling for proxy parsing
 
 OUTPUT_DIR = Path("data")
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -96,10 +98,10 @@ class RepoTracker:
 tracker = RepoTracker()
 
 # =========================
-# ADVANCED PARSING LAYER
+# HIGH-PERFORMANCE PARSING LAYER
 # =========================
 def parse_clash_yaml(yaml_content):
-    """Safely extracts nodes from a Clash YAML structure and formats them."""
+    """Safely extracts nodes from a Clash YAML structure without memory blowup."""
     nodes = []
     try:
         data = yaml.safe_load(yaml_content)
@@ -110,13 +112,14 @@ def parse_clash_yaml(yaml_content):
         if not isinstance(proxies, list):
             return nodes
 
-        for p in proxies:
+        # Enforce a safety ceiling to prevent CPU hanging on abusive files
+        for p in proxies[:MAX_PROXIES_PER_FILE]:
             if not isinstance(p, dict):
                 continue
             ptype = p.get("type", "").lower()
             server = p.get("server")
             port = p.get("port")
-            name = p.get("name", "clash-node")
+            name = re.sub(r'[\s"\'#]', '_', p.get("name", "node"))  # Clean characters
 
             if not server or not port:
                 continue
@@ -132,7 +135,7 @@ def parse_clash_yaml(yaml_content):
                 nodes.append(f"ssr://{server}:{port}::::")
             elif ptype == "vmess":
                 vmess_meta = {
-                    "v": "2", "ps": name, "add": server, "port": str(port),
+                    "v": "2", "ps": name, "add": str(server), "port": str(port),
                     "id": p.get("uuid", ""), "aid": str(p.get("alterId", 0)),
                     "scy": "auto", "net": p.get("network", "tcp"),
                     "type": "none", "host": "", "path": "", "tls": "tls" if p.get("tls") else ""
@@ -143,35 +146,43 @@ def parse_clash_yaml(yaml_content):
                 uuid_or_pass = p.get("uuid") or p.get("password") or ""
                 nodes.append(f"{ptype}://{uuid_or_pass}@{server}:{port}#{name}")
     except Exception as e:
-        logger.debug(f"YAML parsing error (fallback to regex): {e}")
+        logger.debug(f"YAML parsing error: {e}")
     return nodes
 
 def extract_nodes_from_text(text):
-    """Extract proxy protocol links from text using regex matching."""
-    # Match supported protocols with their URLs
-    pattern = r'(vmess|vless|ss|ssr|trojan|tuic|hysteria|hysteria2):\/\/([^\s"\'<>\n]+)'
-    matches = re.findall(pattern, text, re.IGNORECASE)
-    return [f"{proto}://{url}" for proto, url in matches]
+    """Extract proxy protocol links with optimized regex."""
+    if not text:
+        return []
+    # Strict single-pass pattern check targeting valid proxy schemas
+    pattern = r'(vmess|vless|ss|ssr|trojan|tuic|hysteria2|hysteria):\/\/[^\s"\':<>#\^]+(?:#[^\s]*)?'
+    return [match.group(0) for match in re.finditer(pattern, text, re.IGNORECASE)]
 
 def decode_and_extract(raw_bytes, filename=""):
-    """Orchestrates parsing based on file layout rules."""
-    text = raw_bytes.decode('utf-8', errors='ignore')
+    """Linear execution parser without nested retry loops."""
+    if not raw_bytes or len(raw_bytes) > MAX_FILE_SIZE:
+        logger.debug(f"Skipping {filename}: exceeds size limit or empty")
+        return []
+        
+    text = raw_bytes.decode('utf-8', errors='ignore').strip()
     
-    # If the asset file points to YAML, target the structured parser first
+    # Path A: Target Structured Clash Configurations
     if filename.lower().endswith((".yaml", ".yml")):
         yaml_nodes = parse_clash_yaml(text)
         if yaml_nodes:
             return yaml_nodes
 
-    # Try fallback to standard raw text link scraping
+    # Path B: Try Extracting Standard Links Directly
     nodes = extract_nodes_from_text(text)
     if nodes:
         return nodes
     
-    # Try Base64 decoding fallback
+    # Path C: Single Base64 Fallback Attempt (No recursion loop)
     try:
-        padded = raw_bytes + b'=' * (-len(raw_bytes) % 4)
-        decoded_text = base64.b64decode(padded).decode('utf-8', errors='ignore')
+        # Clean whitespaces that disrupt standard base64 strings
+        cleaned_bytes = re.sub(b'\s+', b'', raw_bytes)
+        padded = cleaned_bytes + b'=' * (-len(cleaned_bytes) % 4)
+        decoded_text = base64.b64decode(padded).decode('utf-8', errors='ignore').strip()
+        
         if filename.lower().endswith((".yaml", ".yml")):
             yaml_nodes = parse_clash_yaml(decoded_text)
             if yaml_nodes:
@@ -179,6 +190,7 @@ def decode_and_extract(raw_bytes, filename=""):
         return extract_nodes_from_text(decoded_text)
     except Exception as e:
         logger.debug(f"Base64 decode failed for {filename}: {e}")
+        
     return []
 
 # =========================
