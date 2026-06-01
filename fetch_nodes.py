@@ -5,6 +5,7 @@ import base64
 import socket
 import logging
 import time
+import random
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
@@ -29,6 +30,7 @@ MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB limit
 MAX_PROXIES_PER_FILE = 500
 MAX_FOLDER_DEPTH = 3  # Node configs are typically at root or 1-2 levels deep
 STALE_DAYS = 30  # Skip files not updated in 30+ days (likely archived/bloat)
+MAX_NODES_PER_REPO = 3000  # Sample to this limit if repo extracts more
 
 # Repos to skip - typically frontend-heavy with no node configs
 SKIP_REPO_PATTERNS = [
@@ -42,6 +44,9 @@ SKIP_REPO_PATTERNS = [
 
 OUTPUT_DIR = Path("data")
 OUTPUT_DIR.mkdir(exist_ok=True)
+
+# File to track repos with zero nodes (blacklist)
+BLACKLIST_FILE = OUTPUT_DIR / "zero_node_repos.json"
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -111,10 +116,45 @@ class RepoTracker:
 tracker = RepoTracker()
 
 # =========================
+# BLACKLIST MANAGEMENT
+# =========================
+def load_zero_node_blacklist():
+    """Load the set of repos that previously had zero nodes."""
+    if BLACKLIST_FILE.exists():
+        try:
+            with open(BLACKLIST_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return set(data.get("zero_node_repos", []))
+        except Exception as e:
+            logger.warning(f"Failed to load blacklist: {e}")
+    return set()
+
+def save_zero_node_blacklist(zero_repos):
+    """Save repos with zero nodes to a blacklist file."""
+    try:
+        with open(BLACKLIST_FILE, "w", encoding="utf-8") as f:
+            json.dump({
+                "zero_node_repos": sorted(list(zero_repos)),
+                "updated_at": time.strftime("%Y-%m-%d %H:%M:%S")
+            }, f, indent=2)
+        logger.info(f"Saved {len(zero_repos)} zero-node repos to blacklist")
+    except IOError as e:
+        logger.error(f"Failed to save blacklist: {e}")
+
+def is_repo_blacklisted(repo_name, blacklist):
+    """Check if repo is in the zero-node blacklist."""
+    return repo_name in blacklist
+
+# =========================
 # INTELLIGENT FILE FILTERING LAYER
 # =========================
-def should_skip_repo(repo_name):
-    """Check if repo matches skip patterns (likely frontend/bloated)."""
+def should_skip_repo(repo_name, blacklist):
+    """Check if repo matches skip patterns (likely frontend/bloated) or is blacklisted."""
+    # Check blacklist first
+    if is_repo_blacklisted(repo_name, blacklist):
+        logger.info(f"Skipping {repo_name} (blacklisted - previously had zero nodes)")
+        return True
+    
     for pattern in SKIP_REPO_PATTERNS:
         if re.search(pattern, repo_name, re.IGNORECASE):
             logger.info(f"Skipping {repo_name} (matches pattern: {pattern})")
@@ -381,8 +421,14 @@ def test_tcp(node_str):
 # =========================
 def main():
     logger.info("Starting upgraded node generation process...")
+    
+    # Load blacklist of repos with zero nodes
+    zero_node_blacklist = load_zero_node_blacklist()
+    logger.info(f"Loaded {len(zero_node_blacklist)} repos from zero-node blacklist")
+    
     unique_raw_nodes = set()
     processed_repos = set()
+    zero_node_repos = set()  # Track new repos with zero nodes this run
     current_year = time.strftime("%Y")
 
     for keyword in SEARCH_KEYWORDS:
@@ -407,8 +453,8 @@ def main():
         for item in data.get("items", []):
             repo_name = item["full_name"]
             
-            # Skip repo if it matches bloat patterns
-            if should_skip_repo(repo_name):
+            # Skip repo if it matches bloat patterns or is blacklisted
+            if should_skip_repo(repo_name, zero_node_blacklist):
                 continue
             
             if repo_name in processed_repos:
@@ -472,9 +518,23 @@ def main():
 
             if repo_raw_nodes:
                 repo_raw_nodes = list(set(repo_raw_nodes))
+                
+                # If repo has >MAX_NODES_PER_REPO nodes, randomly sample
+                if len(repo_raw_nodes) > MAX_NODES_PER_REPO:
+                    logger.info(f"Sampling {MAX_NODES_PER_REPO} nodes from {len(repo_raw_nodes)} in {repo_name}")
+                    repo_raw_nodes = random.sample(repo_raw_nodes, MAX_NODES_PER_REPO)
+                
                 tracker.add_counts(repo_name, extracted=len(repo_raw_nodes))
                 unique_raw_nodes.update(repo_raw_nodes)
                 logger.info(f" -> Found {len(repo_raw_nodes)} raw nodes from {repo_name}.")
+            else:
+                # Track repos with zero nodes
+                zero_node_repos.add(repo_name)
+                logger.info(f" -> No nodes found in {repo_name} (will be blacklisted)")
+
+    # Update and save the blacklist with new zero-node repos
+    zero_node_blacklist.update(zero_node_repos)
+    save_zero_node_blacklist(zero_node_blacklist)
 
     raw_node_list = list(unique_raw_nodes)
     logger.info(f"Total unique raw nodes found: {len(raw_node_list)}. Validating TCP connections...")
