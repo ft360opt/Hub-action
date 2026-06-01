@@ -3,104 +3,80 @@
     {
       "repository": "ebrasha/free-v2ray-public-list",
       "stars": 871,
-      "forks": 121,
+      "forks": 122,
       "extracted_nodes": 3000,
-      "valid_nodes": 261,
+      "valid_nodes": 326,
       "quality_score": 100
     },
     {
-      "repository": "MohammadBahemmat/V2ray-Collector",
-      "stars": 42,
-      "forks": 64,
-      "extracted_nodes": 554,
-      "valid_nodes": 12,
-      "quality_score": 93.6
+      "repository": "WLget/V2Ray_configs_64",
+      "stars": 257,
+      "forks": 25,
+      "extracted_nodes": 91,
+      "valid_nodes": 10,
+      "quality_score": 100
     },
     {
-      "repository": "nodesfree/v2raynode",
-      "stars": 79,
-      "forks": 10,
-      "extracted_nodes": 66,
-      "valid_nodes": 28,
-      "quality_score": 90.0
+      "repository": "hello-world-1989/cn-news",
+      "stars": 432,
+      "forks": 18,
+      "extracted_nodes": 8,
+      "valid_nodes": 2,
+      "quality_score": 98.0
+    },
+    {
+      "repository": "MohammadBahemmat/V2ray-Collector",
+      "stars": 41,
+      "forks": 56,
+      "extracted_nodes": 447,
+      "valid_nodes": 9,
+      "quality_score": 92.8
+    },
+    {
+      "repository": "mohamadfg-dev/telegram-v2ray-configs-collector",
+      "stars": 80,
+      "forks": 7,
+      "extracted_nodes": 482,
+      "valid_nodes": 9,
+      "quality_score": 87.0
     },
     {
       "repository": "wenxig/free-nodes-sub",
-      "stars": 49,
+      "stars": 50,
       "forks": 6,
-      "extracted_nodes": 391,
-      "valid_nodes": 207,
-      "quality_score": 85.2
-    },
-    {
-      "repository": "nodesfree/clashnode",
-      "stars": 69,
-      "forks": 4,
-      "extracted_nodes": 79,
-      "valid_nodes": 6,
-      "quality_score": 84.0
-    },
-    {
-      "repository": "Pawdroid/Free-servers",
-      "stars": 17634,
-      "forks": 1153,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 60
+      "extracted_nodes": 374,
+      "valid_nodes": 181,
+      "quality_score": 86.0
     },
     {
       "repository": "ermaozi/get_subscribe",
-      "stars": 8984,
+      "stars": 8987,
       "forks": 669,
       "extracted_nodes": 29,
       "valid_nodes": 0,
       "quality_score": 60
     },
     {
-      "repository": "crossxx-labs/free-proxy",
-      "stars": 1458,
-      "forks": 71,
+      "repository": "ts-sf/fly",
+      "stars": 653,
+      "forks": 40,
       "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 60
     },
     {
-      "repository": "devswha/patina",
-      "stars": 113,
+      "repository": "Freedom-Guard/Freedom-Guard",
+      "stars": 317,
       "forks": 21,
       "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 60
     },
     {
-      "repository": "bq2015/FreeProxies",
-      "stars": 610,
-      "forks": 156,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 60
-    },
-    {
-      "repository": "rcy1314/Rss-Translation",
-      "stars": 77,
-      "forks": 60,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 60
-    },
-    {
-      "repository": "Alvin9999-newpac/fanqiang",
-      "stars": 1998,
-      "forks": 244,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 60
-    },
-    {
-      "repository": "clashv2ray-hub/clashfree",
-      "stars": 250,
+      "repository": "Re0XIAOPA/AutoScrapeFreeNodes",
+      "stars": 52,
       "forks": 9,
-      "extracted_nodes": 38,
+      "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 49.0
     },
@@ -108,65 +84,17 @@
       "repository": "marshall888666/free_clash_subscribe",
       "stars": 7,
       "forks": 0,
-      "extracted_nodes": 64,
-      "valid_nodes": 32,
+      "extracted_nodes": 72,
+      "valid_nodes": 40,
       "quality_score": 45.6
-    },
-    {
-      "repository": "find-xposed-magisk/vercel-reverse-proxy",
-      "stars": 29,
-      "forks": 43,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 43.2
-    },
-    {
-      "repository": "junjun266/FreeProxyGo",
-      "stars": 99,
-      "forks": 2,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 42.0
-    },
-    {
-      "repository": "ChaselDutt/VPN-Deep-Test",
-      "stars": 75,
-      "forks": 2,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 42.0
     },
     {
       "repository": "g-star1024/my-clash-subscribe",
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 143,
-      "valid_nodes": 138,
+      "valid_nodes": 136,
       "quality_score": 40.8
-    },
-    {
-      "repository": "WLget/V2ray_free",
-      "stars": 44,
-      "forks": 3,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 38.2
-    },
-    {
-      "repository": "skka3134/Free-servers",
-      "stars": 28,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 22.4
-    },
-    {
-      "repository": "maiyulao/ResoHub",
-      "stars": 14,
-      "forks": 1,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 12.2
     },
     {
       "repository": "cbusifabcap/daily_free_vpn",
@@ -177,23 +105,39 @@
       "quality_score": 11.6
     },
     {
-      "repository": "AlchemyLink/Raven-subscribe",
-      "stars": 9,
+      "repository": "lerjtl/Testfree",
+      "stars": 12,
+      "forks": 1,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 10.6
+    },
+    {
+      "repository": "ATang007ZH/freenode",
+      "stars": 8,
+      "forks": 1,
+      "extracted_nodes": 5,
+      "valid_nodes": 0,
+      "quality_score": 7.4
+    },
+    {
+      "repository": "rico-cell/clash-proxy-sub",
+      "stars": 8,
       "forks": 0,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 7.2
+      "quality_score": 6.4
     },
     {
-      "repository": "parsamrrelax/auto-warp-config",
-      "stars": 1,
-      "forks": 2,
+      "repository": "wanwushequ/cfyxip",
+      "stars": 0,
+      "forks": 3,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 2.8
+      "quality_score": 3.0
     },
     {
-      "repository": "prima32/warp-config-generator-vercel",
+      "repository": "sdfnh/fanqiang",
       "stars": 2,
       "forks": 1,
       "extracted_nodes": 0,
@@ -201,15 +145,7 @@
       "quality_score": 2.6
     },
     {
-      "repository": "SANTOSHPATIL2004/Telegram-Proxy",
-      "stars": 2,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 1.6
-    },
-    {
-      "repository": "Cat-Ling/sing-box",
+      "repository": "feiniaovpn/Game-Accelerator---VPN",
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 0,
@@ -217,15 +153,7 @@
       "quality_score": 0.8
     },
     {
-      "repository": "Bemly/china-steam-pricer",
-      "stars": 1,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.8
-    },
-    {
-      "repository": "SiddanthEmani/kyros",
+      "repository": "feiniaovpn/--VPN",
       "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
@@ -233,7 +161,7 @@
       "quality_score": 0.0
     },
     {
-      "repository": "Sinaksh0/Warp-config",
+      "repository": "feiniao1-VPN/Node-based-VPN",
       "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
@@ -241,31 +169,7 @@
       "quality_score": 0.0
     },
     {
-      "repository": "RoxxuDoni/bash-warp-generator",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "Beallenonindustrial63/no-ai-in-nodejs-core",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "GmSSL/GmSSL-Nodejs",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "zinan92/daily-newsletter",
+      "repository": "feiniao1-VPN/Wall-Climbing-Accelerator---VPN",
       "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
@@ -273,5 +177,5 @@
       "quality_score": 0.0
     }
   ],
-  "updated_at": "2026-06-01 04:47:34"
+  "updated_at": "2026-06-01 20:42:06"
 }
