@@ -4,13 +4,21 @@
       "repository": "ebrasha/free-v2ray-public-list",
       "stars": 871,
       "forks": 121,
-      "extracted_nodes": 75204,
-      "valid_nodes": 7041,
+      "extracted_nodes": 75295,
+      "valid_nodes": 6965,
+      "quality_score": 100
+    },
+    {
+      "repository": "WLget/V2Ray_configs_64",
+      "stars": 257,
+      "forks": 25,
+      "extracted_nodes": 88,
+      "valid_nodes": 10,
       "quality_score": 100
     },
     {
       "repository": "hello-world-1989/cn-news",
-      "stars": 429,
+      "stars": 430,
       "forks": 18,
       "extracted_nodes": 8,
       "valid_nodes": 2,
@@ -20,17 +28,25 @@
       "repository": "MohammadBahemmat/V2ray-Collector",
       "stars": 42,
       "forks": 64,
-      "extracted_nodes": 138,
-      "valid_nodes": 5,
+      "extracted_nodes": 454,
+      "valid_nodes": 9,
       "quality_score": 93.6
     },
     {
-      "repository": "xyfqzy/free-nodes",
-      "stars": 117,
-      "forks": 12,
-      "extracted_nodes": 2905,
-      "valid_nodes": 410,
-      "quality_score": 92.0
+      "repository": "clashv2ray-hub/clashfree",
+      "stars": 250,
+      "forks": 9,
+      "extracted_nodes": 38,
+      "valid_nodes": 23,
+      "quality_score": 89.0
+    },
+    {
+      "repository": "tglaoshiji/nodeshare",
+      "stars": 169,
+      "forks": 7,
+      "extracted_nodes": 801,
+      "valid_nodes": 121,
+      "quality_score": 87.0
     },
     {
       "repository": "wenxig/free-nodes-sub",
@@ -42,7 +58,7 @@
     },
     {
       "repository": "Pawdroid/Free-servers",
-      "stars": 17632,
+      "stars": 17634,
       "forks": 1153,
       "extracted_nodes": 0,
       "valid_nodes": 0,
@@ -57,6 +73,14 @@
       "quality_score": 60
     },
     {
+      "repository": "crossxx-labs/free-proxy",
+      "stars": 1458,
+      "forks": 71,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 60
+    },
+    {
       "repository": "devswha/patina",
       "stars": 113,
       "forks": 21,
@@ -65,44 +89,20 @@
       "quality_score": 60
     },
     {
-      "repository": "Rain-kl/OpenFlare",
-      "stars": 131,
-      "forks": 31,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 60
+      "repository": "v2raynnodes/clashfree",
+      "stars": 6,
+      "forks": 1,
+      "extracted_nodes": 1302,
+      "valid_nodes": 409,
+      "quality_score": 45.8
     },
     {
       "repository": "marshall888666/free_clash_subscribe",
       "stars": 7,
       "forks": 0,
-      "extracted_nodes": 55,
-      "valid_nodes": 24,
+      "extracted_nodes": 64,
+      "valid_nodes": 32,
       "quality_score": 45.6
-    },
-    {
-      "repository": "nodesfree/clashnode",
-      "stars": 69,
-      "forks": 4,
-      "extracted_nodes": 16,
-      "valid_nodes": 0,
-      "quality_score": 44.0
-    },
-    {
-      "repository": "licheng527/Free-servers",
-      "stars": 77,
-      "forks": 3,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 43.0
-    },
-    {
-      "repository": "TG-NAV/nodeshare",
-      "stars": 75,
-      "forks": 3,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 43.0
     },
     {
       "repository": "junjun266/FreeProxyGo",
@@ -116,9 +116,17 @@
       "repository": "g-star1024/my-clash-subscribe",
       "stars": 1,
       "forks": 0,
-      "extracted_nodes": 144,
-      "valid_nodes": 132,
+      "extracted_nodes": 143,
+      "valid_nodes": 136,
       "quality_score": 40.8
+    },
+    {
+      "repository": "WLget/V2ray_free",
+      "stars": 44,
+      "forks": 3,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 38.2
     },
     {
       "repository": "skka3134/Free-servers",
@@ -129,6 +137,14 @@
       "quality_score": 22.4
     },
     {
+      "repository": "toml66l/fanqiang",
+      "stars": 18,
+      "forks": 0,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 14.4
+    },
+    {
       "repository": "maiyulao/ResoHub",
       "stars": 14,
       "forks": 1,
@@ -137,12 +153,20 @@
       "quality_score": 12.2
     },
     {
-      "repository": "lerjtl/Testfree",
+      "repository": "cbusifabcap/daily_free_vpn",
       "stars": 12,
-      "forks": 1,
+      "forks": 2,
+      "extracted_nodes": 480,
+      "valid_nodes": 0,
+      "quality_score": 11.6
+    },
+    {
+      "repository": "xxcdd/web2rss",
+      "stars": 7,
+      "forks": 3,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 10.6
+      "quality_score": 8.6
     },
     {
       "repository": "AlchemyLink/Raven-subscribe",
@@ -151,14 +175,6 @@
       "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 7.2
-    },
-    {
-      "repository": "wanwushequ/cfyxip",
-      "stars": 0,
-      "forks": 3,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 3.0
     },
     {
       "repository": "parsamrrelax/auto-warp-config",
@@ -177,12 +193,12 @@
       "quality_score": 2.6
     },
     {
-      "repository": "harrypapaai/limitless",
-      "stars": 1,
-      "forks": 1,
+      "repository": "zhaolinger9902/china-cryptos",
+      "stars": 3,
+      "forks": 0,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 1.8
+      "quality_score": 2.4
     },
     {
       "repository": "SANTOSHPATIL2004/Telegram-Proxy",
@@ -210,14 +226,6 @@
     },
     {
       "repository": "SiddanthEmani/kyros",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "VordaBrat/zeroReg-landing",
       "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
@@ -263,7 +271,15 @@
       "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 0.0
+    },
+    {
+      "repository": "cys92096/python-xray-argo",
+      "stars": 0,
+      "forks": 0,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 0.0
     }
   ],
-  "updated_at": "2026-06-01 03:15:59"
+  "updated_at": "2026-06-01 04:31:07"
 }
