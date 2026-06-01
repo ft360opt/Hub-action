@@ -23,8 +23,8 @@ SEARCH_KEYWORDS = [
     "warp config", "china nodes", "订阅", "节点", "梯子", "翻墙"
 ]
 MAX_REPOS_PER_KEYWORD = 5
-MAX_WORKERS = 40
-TIMEOUT_SECONDS = 4
+MAX_WORKERS = 150  # Raise workers significantly (GitHub runners can handle up to 200)
+TIMEOUT_SECONDS = 1.5  # Drop to 1.5s. Fast/usable nodes respond in under 1 second.
 MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB limit
 MAX_PROXIES_PER_FILE = 500
 MAX_FOLDER_DEPTH = 3  # Node configs are typically at root or 1-2 levels deep
@@ -299,45 +299,62 @@ def decode_and_extract(raw_bytes, filename=""):
     return []
 
 # =========================
-# NETWORK VALIDATION LAYER
+# NETWORK VALIDATION LAYER (OPTIMIZED)
 # =========================
+# Global state trackers to drop duplicates instantly across parallel threads
+tested_hosts = set()
+failed_hosts = set()
+
 def parse_target_host_port(node_str):
-    """Extract host and port from various proxy protocol formats."""
+    """Extract host and port from various proxy protocol formats (high-speed version)."""
     try:
-        payload = node_str.split("://", 1)[1]
-        payload = payload.split("#")[0]
+        payload = node_str.split("://")[-1]
+        payload = payload.split("#")[0]  # Strip naming remark tags completely
         
         if "vmess://" in node_str:
             try:
+                # Add base64 padding fallback safely
                 decoded_vmess = json.loads(base64.b64decode(payload + '=' * (-len(payload) % 4)).decode('utf-8'))
                 return decoded_vmess.get('add'), int(decoded_vmess.get('port', 0))
-            except Exception as e:
-                logger.debug(f"Failed to parse vmess: {e}")
+            except:
+                pass
 
         if "@" in payload:
-            payload = payload.split("@", 1)[1]
+            payload = payload.split("@")[-1]
             
         host_port = payload.split("?")[0]
         if ":" in host_port:
-            parts = host_port.rsplit(":", 1)  # Use rsplit to handle IPv6 if needed
+            parts = host_port.split(":")
             return parts[0], int(parts[1])
-    except (ValueError, IndexError, KeyError) as e:
-        logger.debug(f"Failed to parse host/port from {node_str}: {e}")
+    except:
+        pass
     return None, None
 
 def test_tcp(node_str):
-    """Test if a node's host:port is reachable via TCP."""
+    """Test if a node's host:port is reachable via TCP (with host-level caching)."""
     host, port = parse_target_host_port(node_str)
     if not host or not port:
         return node_str, False
+        
+    # Block local loopbacks and typical mock string targets
+    if host in ["127.0.0.1", "0.0.0.0", "localhost"] or ".example." in host:
+        return node_str, False
+
+    host_key = f"{host}:{port}"
+    
+    # Early Check: If this exact IP and Port already failed in another thread, drop it instantly
+    if host_key in failed_hosts:
+        return node_str, False
+
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(TIMEOUT_SECONDS)
         sock.connect((host, port))
         sock.close()
         return node_str, True
-    except (socket.timeout, socket.error, OSError) as e:
-        logger.debug(f"TCP test failed for {host}:{port}: {e}")
+    except:
+        # Record failure signature globally
+        failed_hosts.add(host_key)
         return node_str, False
 
 # =========================
