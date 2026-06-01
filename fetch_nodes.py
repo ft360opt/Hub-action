@@ -1,8 +1,3 @@
-# =========================
-# fetch_nodes.py
-# PART 1/2
-# =========================
-
 import os
 import re
 import json
