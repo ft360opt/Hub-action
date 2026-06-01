@@ -179,7 +179,7 @@ def decode_and_extract(raw_bytes, filename=""):
     # Path C: Single Base64 Fallback Attempt (No recursion loop)
     try:
         # Clean whitespaces that disrupt standard base64 strings
-        cleaned_bytes = re.sub(b'\s+', b'', raw_bytes)
+        cleaned_bytes = re.sub(br'\s+', b'', raw_bytes)
         padded = cleaned_bytes + b'=' * (-len(cleaned_bytes) % 4)
         decoded_text = base64.b64decode(padded).decode('utf-8', errors='ignore').strip()
         
