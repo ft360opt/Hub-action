@@ -284,5 +284,5 @@ def main():
                             tracker.calculate_and_save(OUTPUT_DIR / "repository_quality.json")
                             logger.info("Processing complete! Data output written to 'data/' folder.")
                             
-if name == "main":
+if __name__ == "__main__":
     main()
