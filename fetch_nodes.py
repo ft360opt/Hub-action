@@ -299,8 +299,17 @@ def decode_and_extract(raw_bytes, filename=""):
     return []
 
 # =========================
-# NETWORK VALIDATION LAYER (OPTIMIZED)
+# STRICT HIGH-FIDELITY VALIDATION LAYER
 # =========================
+# Block common dummy IP networks and public DNS hijacking landing zones
+BLOCKED_IP_PREFIXES = (
+    "127.", "0.", "10.", "172.16.", "192.168.", "169.254.",  # Private/Local ranges
+)
+# Add known DNS hijacking/wildcard target landing IPs if your ISP uses them (e.g., placeholder hosts)
+BLOCKED_EXACT_IPS = {
+    "208.67.222.222", "208.67.220.220",  # OpenDNS block pages if triggered
+}
+
 # Global state trackers to drop duplicates instantly across parallel threads
 tested_hosts = set()
 failed_hosts = set()
@@ -331,7 +340,7 @@ def parse_target_host_port(node_str):
     return None, None
 
 def test_tcp(node_str):
-    """Test if a node's host:port is reachable via TCP (with host-level caching)."""
+    """Test if a node's host:port is reachable via TCP with DNS resolution and IP filtering."""
     host, port = parse_target_host_port(node_str)
     if not host or not port:
         return node_str, False
@@ -347,10 +356,20 @@ def test_tcp(node_str):
         return node_str, False
 
     try:
+        # CRITICAL: Resolve domain to an IP address first to evaluate its destination authenticity
+        resolved_ip = socket.gethostbyname(host)
+        
+        # Filter out internal loopbacks or generic structural dummy targets
+        if any(resolved_ip.startswith(prefix) for prefix in BLOCKED_IP_PREFIXES) or resolved_ip in BLOCKED_EXACT_IPS:
+            failed_hosts.add(host_key)
+            return node_str, False
+
+        # Establish the strict TCP network socket handshake
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(TIMEOUT_SECONDS)
-        sock.connect((host, port))
+        sock.connect((resolved_ip, port))
         sock.close()
+        
         return node_str, True
     except:
         # Record failure signature globally
