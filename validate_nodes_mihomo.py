@@ -302,15 +302,11 @@ def execute_speedtest(api_port):
         return {}
 
 
-def validate_nodes_with_mihomo(raw_node_list, node_file_path="data/nodeALL.txt"):
+def validate_nodes_with_mihomo(node_file_path="data/nodeALL.txt",timeout_ms=3000):
     """
     Mihomo 验证入口函数
     
     集成到 fetch_nodes.py 的主函数中
-    
-    Args:
-        raw_node_list: 原始节点列表
-        node_file_path: 节点文件路径
     
     Returns:
         valid_nodes_list: 验证通过的节点列表
