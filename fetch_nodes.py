@@ -541,19 +541,19 @@ def main():
     raw_node_list = list(unique_raw_nodes)
     logger.info(f"Total unique raw nodes found: {len(raw_node_list)}.")
     
-     # 1. 必须先写出原始文件，才能供给 Mihomo 读取
-     node_all_path = OUTPUT_DIR / "nodeALL.txt"
-     try:
-         with open(node_all_path, "w", encoding="utf-8") as f:
-             f.write("\n".join(raw_node_list))
-         logger.info(f"Wrote {len(raw_node_list)} raw nodes to nodeALL.txt")
-     except IOError as e:
-         logger.error(f"Failed to write raw nodes file: {e}")
+    # 1. 必须先写出原始文件，才能供给 Mihomo 读取
+    node_all_path = OUTPUT_DIR / "nodeALL.txt"
+    try:
+        with open(node_all_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(raw_node_list))
+        logger.info(f"Wrote {len(raw_node_list)} raw nodes to nodeALL.txt")
+    except IOError as e:
+        logger.error(f"Failed to write raw nodes file: {e}")
  
-     # 2. 尝试 Mihomo 验证 (修复参数传递：第一个参数接收文件路径字符串，第二个接收超时时间)
-     logger.info("Initializing node testing validation process via Mihomo Core...")
-     valid_nodes_list = []
-     mihomo_results = validate_nodes_with_mihomo(str(node_all_path), timeout_ms=int(TIMEOUT_SECONDS * 1000))
+    # 2. 尝试 Mihomo 验证 (修复参数传递：第一个参数接收文件路径字符串，第二个接收超时时间)
+    logger.info("Initializing node testing validation process via Mihomo Core...")
+    valid_nodes_list = []
+    mihomo_results = validate_nodes_with_mihomo(str(node_all_path), timeout_ms=int(TIMEOUT_SECONDS * 1000))
     
     if mihomo_results:
         # Mihomo 成功
