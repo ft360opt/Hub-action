@@ -1,5 +1,7 @@
 {
   "zero_node_repos": [
+    "ABI-ZTROS/phantom-lkm",
+    "AIsouler/MyClash",
     "AlchemyLink/Raven-subscribe",
     "Alvin9999-newpac/fanqiang",
     "Beallenonindustrial63/no-ai-in-nodejs-core",
@@ -9,6 +11,7 @@
     "Freedom-Guard/Freedom-Guard",
     "GmSSL/GmSSL-Nodejs",
     "HZ-PRE/appsc",
+    "LikaiLee/rss-reader",
     "NeelLogic/Chinese-Zodiac-Finder",
     "OpenNetCN/clash",
     "Pawdroid/Free-servers",
@@ -18,6 +21,7 @@
     "SANTOSHPATIL2004/Telegram-Proxy",
     "SiddanthEmani/kyros",
     "Sinaksh0/Warp-config",
+    "VordaBrat/zeroReg-landing",
     "WLget/V2ray_free",
     "a63976659/ComfyUI-Chinese-Translation",
     "bq2015/FreeProxies",
@@ -27,12 +31,15 @@
     "crossxx-labs/free-proxy",
     "cxhihilwb123-hash/tixiaozhu-oss",
     "devswha/patina",
+    "feiniao1-VPN/Node-Airport---VPN",
     "feiniao1-VPN/Node-based-VPN",
     "feiniao1-VPN/Wall-Climbing-Accelerator---VPN",
     "feiniaovpn/--VPN",
+    "feiniaovpn/Free-VPN",
     "feiniaovpn/Game-Accelerator---VPN",
     "find-xposed-magisk/vercel-reverse-proxy",
     "gfpcom/free-proxy-list",
+    "harrypapaai/limitless",
     "junjun266/FreeProxyGo",
     "lerjtl/Testfree",
     "licheng527/Free-servers",
@@ -53,5 +60,5 @@
     "yzgolden86/Qreminder",
     "zinan92/daily-newsletter"
   ],
-  "updated_at": "2026-06-02 07:08:48"
+  "updated_at": "2026-06-02 09:09:55"
 }

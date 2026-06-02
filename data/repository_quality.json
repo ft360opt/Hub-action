@@ -2,35 +2,43 @@
   "repositories": [
     {
       "repository": "ebrasha/free-v2ray-public-list",
-      "stars": 873,
+      "stars": 877,
       "forks": 123,
       "extracted_nodes": 3000,
-      "valid_nodes": 265,
+      "valid_nodes": 270,
       "quality_score": 100
-    },
-    {
-      "repository": "hello-world-1989/cn-news",
-      "stars": 432,
-      "forks": 18,
-      "extracted_nodes": 8,
-      "valid_nodes": 2,
-      "quality_score": 98.0
     },
     {
       "repository": "MohammadBahemmat/V2ray-Collector",
       "stars": 41,
       "forks": 56,
-      "extracted_nodes": 509,
-      "valid_nodes": 17,
+      "extracted_nodes": 482,
+      "valid_nodes": 11,
       "quality_score": 92.8
+    },
+    {
+      "repository": "mohamadfg-dev/telegram-v2ray-configs-collector",
+      "stars": 80,
+      "forks": 7,
+      "extracted_nodes": 480,
+      "valid_nodes": 12,
+      "quality_score": 87.0
     },
     {
       "repository": "wenxig/free-nodes-sub",
       "stars": 50,
       "forks": 6,
-      "extracted_nodes": 365,
-      "valid_nodes": 183,
+      "extracted_nodes": 395,
+      "valid_nodes": 210,
       "quality_score": 86.0
+    },
+    {
+      "repository": "v2raynnodes/v2rayfree",
+      "stars": 43,
+      "forks": 6,
+      "extracted_nodes": 1126,
+      "valid_nodes": 242,
+      "quality_score": 80.4
     },
     {
       "repository": "ermaozi/get_subscribe",
@@ -41,27 +49,27 @@
       "quality_score": 60
     },
     {
-      "repository": "saishun/TyporaTheme",
-      "stars": 4,
-      "forks": 16,
-      "extracted_nodes": 241,
-      "valid_nodes": 168,
-      "quality_score": 59.2
+      "repository": "Leon406/SubCrawler",
+      "stars": 1528,
+      "forks": 221,
+      "extracted_nodes": 8,
+      "valid_nodes": 0,
+      "quality_score": 60
     },
     {
-      "repository": "a63976659/ComfyUI-Chinese-Translation",
-      "stars": 171,
-      "forks": 7,
+      "repository": "AIsouler/MyClash",
+      "stars": 169,
+      "forks": 12,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 47.0
+      "quality_score": 52.0
     },
     {
       "repository": "marshall888666/free_clash_subscribe",
       "stars": 8,
       "forks": 0,
       "extracted_nodes": 83,
-      "valid_nodes": 48,
+      "valid_nodes": 51,
       "quality_score": 46.4
     },
     {
@@ -69,19 +77,51 @@
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 146,
-      "valid_nodes": 140,
+      "valid_nodes": 139,
       "quality_score": 40.8
     },
     {
-      "repository": "clearcdq/chatgpt",
+      "repository": "LikaiLee/rss-reader",
+      "stars": 9,
+      "forks": 1,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 8.2
+    },
+    {
+      "repository": "ATang007ZH/freenode",
+      "stars": 8,
+      "forks": 1,
+      "extracted_nodes": 5,
+      "valid_nodes": 0,
+      "quality_score": 7.4
+    },
+    {
+      "repository": "feiniaovpn/Free-VPN",
+      "stars": 2,
+      "forks": 1,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 2.6
+    },
+    {
+      "repository": "harrypapaai/limitless",
       "stars": 1,
-      "forks": 0,
+      "forks": 1,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 0.8
+      "quality_score": 1.8
     },
     {
-      "repository": "xi0yu/n8n-nodes-minimax-unified",
+      "repository": "ABI-ZTROS/phantom-lkm",
+      "stars": 1,
+      "forks": 1,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 1.8
+    },
+    {
+      "repository": "VordaBrat/zeroReg-landing",
       "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
@@ -89,31 +129,7 @@
       "quality_score": 0.0
     },
     {
-      "repository": "cxhihilwb123-hash/tixiaozhu-oss",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "yzgolden86/Qreminder",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "clash-client/clash-verge",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "crazypeace/my-dream-proxy-client",
+      "repository": "feiniao1-VPN/Node-Airport---VPN",
       "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
@@ -121,5 +137,5 @@
       "quality_score": 0.0
     }
   ],
-  "updated_at": "2026-06-02 07:09:52"
+  "updated_at": "2026-06-02 09:10:08"
 }
