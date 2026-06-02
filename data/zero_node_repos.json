@@ -2,6 +2,7 @@
   "zero_node_repos": [
     "ABI-ZTROS/phantom-lkm",
     "AIsouler/MyClash",
+    "ALLCAPS-Droid/xin-wen-lian-bo",
     "AlchemyLink/Raven-subscribe",
     "Alvin9999-newpac/fanqiang",
     "Beallenonindustrial63/no-ai-in-nodejs-core",
@@ -46,6 +47,7 @@
     "junjun266/FreeProxyGo",
     "lerjtl/Testfree",
     "licheng527/Free-servers",
+    "lucifer988/clash-subscribe",
     "maiyulao/ResoHub",
     "parsamrrelax/auto-warp-config",
     "prima32/warp-config-generator-vercel",
@@ -64,5 +66,5 @@
     "yzgolden86/Qreminder",
     "zinan92/daily-newsletter"
   ],
-  "updated_at": "2026-06-02 09:31:12"
+  "updated_at": "2026-06-02 13:01:58"
 }
