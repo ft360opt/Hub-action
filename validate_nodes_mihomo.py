@@ -1,211 +1,44 @@
-#!/usr/bin/env python3
-"""
-改进的 Mihomo 节点验证模块
-集成到 fetch_nodes.py，用于替换 test_tcp 函数
-
-关键改进：
-1. 动态端口分配（防止冲突）
-2. 自动下载最新二进制
-3. GitHub Actions 兼容性
-4. 降级处理机制
-5. 完整的错误恢复
-"""
-
-import base64
-import json
 import os
-import re
-import socket
-import subprocess
 import sys
 import time
-import urllib.parse
+import json
+import base64
+import socket
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
+import urllib.parse
+import subprocess
+import tempfile
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+# ================= 配置区 =================
+MIHOMO_BINARY = os.environ.get("MIHOMO_BINARY", "mihomo") # 允许通过环境变量指定二进制路径
+CHUNK_SIZE = 500                                           # 每批处理节点数，避免 GitHub Actions OOM
+API_STARTUP_TIMEOUT = 30                                   # API 启动等待超时(秒)
+TEST_URL = "http://www.gstatic.com/generate_204"           # 测速目标 URL
+# ==========================================
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
-# ===========================
-# 配置
-# ===========================
-VALIDATION_CONFIG = {
-    "timeout_ms": 2500,
-    "max_workers": 15,
-    "test_url": "https://www.google.com/generate_204",
-    "api_startup_timeout": 60,  # 最多等待60秒让API就绪
-    "enable_mihomo": True,  # 可通过环境变量覆盖
-}
-
-# GitHub Actions 环境检测
-IS_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
-MIHOMO_BINARY = "./mihomo"
-CONFIG_FILE = "config.yaml"
-REPORT_PATH = "data/speedtest_report.json"
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s: %(message)s"
-) if not logging.root.handlers else None
-
-
-# ===========================
-# 工具函数
-# ===========================
-
 def get_free_port():
-    """动态获取系统闲置的可用端口"""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("127.0.0.1", 0))
-            port = s.getsockname()[1]
-            logger.info(f"Allocated free port: {port}")
-            return port
-    except Exception as e:
-        logger.error(f"Failed to allocate port: {e}")
-        return 9090  # Fallback
+    """获取一个操作系统分配的空闲端口"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))
+        return s.getsockname()[1]
 
-
-def download_mihomo_core():
-    """智能下载最新版 Mihomo 内核"""
-    if os.path.exists(MIHOMO_BINARY):
-        logger.info("Mihomo binary already exists, skipping download")
-        return True
-
-    logger.info("Attempting to download latest Mihomo release...")
-
-    try:
-        # 方案A: 从 GitHub Releases API 获取最新版本
-        api_url = "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
-        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/vnd.github.v3+json"}
-        
-        req = urllib.request.Request(api_url, headers=headers)
-        with urllib.request.urlopen(req, timeout=10) as res:
-            release_info = json.loads(res.read().decode())
-
-        # 根据系统选择合适的二进制
-        download_url = None
-        target_pattern = "linux-amd64-compatible"
-        
-        for asset in release_info.get("assets", []):
-            asset_name = asset.get("name", "")
-            if target_pattern in asset_name and asset_name.endswith(".gz"):
-                download_url = asset["browser_download_url"]
-                logger.info(f"Found compatible release: {asset_name}")
-                break
-
-        if not download_url:
-            logger.warning("Compatible binary not found, trying generic linux-amd64")
-            for asset in release_info.get("assets", []):
-                if "linux-amd64" in asset["name"] and asset["name"].endswith(".gz"):
-                    download_url = asset["browser_download_url"]
-                    break
-
-        if not download_url:
-            logger.error("No suitable Mihomo release found")
-            return False
-
-        logger.info(f"Downloading from: {download_url}")
-        gz_path = "mihomo.gz"
-        urllib.request.urlretrieve(download_url, gz_path)
-
-        # 解压
-        import gzip
-        with gzip.open(gz_path, "rb") as f_in, open(MIHOMO_BINARY, "wb") as f_out:
-            f_out.write(f_in.read())
-
-        os.chmod(MIHOMO_BINARY, 0o755)
-        os.remove(gz_path)
-        logger.info("Mihomo binary ready")
-        return True
-
-    except Exception as e:
-        logger.error(f"Failed to download Mihomo: {e}")
-        logger.warning("Will fallback to TCP-only validation")
-        return False
-
-
-def parse_and_build_config(api_port, node_file_path):
-    """解析节点文件并生成 Mihomo 配置"""
-    if not os.path.exists(node_file_path):
-        logger.error(f"Node file not found: {node_file_path}")
-        return False
-
-    with open(node_file_path, "r", encoding="utf-8") as f:
-        raw_content = f.read().strip()
-
-    if not raw_content:
-        logger.error("Node file is empty")
-        return False
-
-    # 尝试解码 Base64 订阅
-    if re.match(r"^[A-Za-z0-9+/=\s]+$", raw_content) and len(raw_content) > 100:
-        try:
-            decoded = base64.b64decode(raw_content).decode("utf-8", errors="ignore")
-            if "://" in decoded:  # 验证确实是节点链接
-                raw_content = decoded
-                logger.info("Successfully decoded base64 subscription")
-        except Exception:
-            logger.debug("Failed to decode as base64, treating as plain text")
-
-    # 核心配置（轻量级）
-    config_base = {
-        "log-level": "silent",
-        "external-controller": f"127.0.0.1:{api_port}",
-        "external-ui-url": "",
-        "secret": "",
-        "proxies": [],
-        "proxy-groups": [],
-        "rules": [],
-    }
-
-    # 格式检测
-    if "proxies:" in raw_content:
-        # 已经是 YAML 格式
-        logger.info("Detected YAML format, using as-is")
-        try:
-            import yaml
-            parsed = yaml.safe_load(raw_content)
-            if isinstance(parsed, dict) and "proxies" in parsed:
-                config_base["proxies"] = parsed.get("proxies", [])
-            else:
-                logger.warning("Invalid YAML structure")
-                return False
-        except ImportError:
-            # 如果没有 yaml 库，直接写入（Mihomo 会自动解析）
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                f.write(raw_content)
-            return True
-    else:
-        # 链接列表格式
-        logger.info("Detected link format, converting to config")
-        links = [line.strip() for line in raw_content.split("\n") if line.strip() and "://" in line]
-        config_base["proxies"] = links
-
-    # 写入配置
-    try:
-        import yaml
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            yaml.dump(config_base, f, allow_unicode=True)
-    except ImportError:
-        # 降级：使用 JSON（Mihomo 完全兼容）
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            f.write(json.dumps(config_base, ensure_ascii=False, indent=2))
-
-    logger.info(f"Generated config with {len(config_base['proxies'])} proxies")
-    return True
-
-
-def wait_for_api_ready(api_port, timeout=None):
-    """等待 API 就绪"""
-    if timeout is None:
-        timeout = VALIDATION_CONFIG["api_startup_timeout"]
-
+def wait_for_api_ready(api_port, process, timeout=API_STARTUP_TIMEOUT):
+    """等待 API 就绪，并增加进程崩溃检测（优化2）"""
     api_url = f"http://127.0.0.1:{api_port}/version"
     logger.info(f"Waiting for API to be ready at {api_url}...")
-
+    
     for attempt in range(timeout):
+        # 检查进程是否已经崩溃退出
+        if process.poll() is not None:
+            err = process.stderr.read().decode('utf-8', errors='ignore') if process.stderr else "No stderr"
+            logger.error(f"Mihomo crashed on startup (Exit: {process.returncode}). Error:\n{err}")
+            return False
+            
         try:
             req = urllib.request.Request(api_url, method="GET")
             with urllib.request.urlopen(req, timeout=1) as res:
@@ -213,155 +46,156 @@ def wait_for_api_ready(api_port, timeout=None):
                 logger.info(f"API ready: {data.get('version', 'unknown')}")
                 return True
         except Exception:
-            if attempt % 3 == 0:
-                logger.debug(f"API not ready, attempt {attempt + 1}/{timeout}")
             time.sleep(1)
-
+            
     logger.error("API failed to start within timeout")
     return False
 
-
-def test_single_node(api_port, proxy_name):
-    """测试单个节点"""
+def test_proxy_delay(api_port, proxy_name, timeout_ms):
+    """测试单个代理的延迟"""
+    encoded_name = urllib.parse.quote(proxy_name)
+    url = f"http://127.0.0.1:{api_port}/proxies/{encoded_name}/delay?url={urllib.parse.quote(TEST_URL)}&timeout={timeout_ms}"
     try:
-        encoded_name = urllib.parse.quote(proxy_name)
-        url = (
-            f"http://127.0.0.1:{api_port}/proxies/{encoded_name}/delay"
-            f"?url={urllib.parse.quote(VALIDATION_CONFIG['test_url'])}"
-            f"&timeout={VALIDATION_CONFIG['timeout_ms']}"
-        )
         req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=5) as res:
+        with urllib.request.urlopen(req, timeout=5) as res: # API 调用本身给 5s 超时
             data = json.loads(res.read().decode())
-            delay = data.get("delay", -1)
-            if delay > 0:
-                logger.debug(f"✓ {proxy_name}: {delay}ms")
-            return proxy_name, delay
-    except Exception as e:
-        logger.debug(f"✗ {proxy_name}: {type(e).__name__}")
-        return proxy_name, -1
+            if "delay" in data and data["delay"] > 0:
+                return proxy_name, data["delay"]
+    except Exception:
+        pass
+    return None, None
 
-
-def execute_speedtest(api_port):
-    """执行批量测速"""
-    if not wait_for_api_ready(api_port):
-        logger.error("Speedtest aborted: API not ready")
-        return {}
-
-    try:
-        logger.info("Fetching proxy list...")
-        with urllib.request.urlopen(
-            f"http://127.0.0.1:{api_port}/proxies", timeout=5
-        ) as res:
-            proxies_data = json.loads(res.read().decode())
-
-        all_proxies = proxies_data.get("proxies", {})
-        # 排除系统组
-        target_nodes = [
-            name
-            for name, info in all_proxies.items()
-            if info.get("type") not in ["Selector", "URLTest", "Fallback", "Compatible", "Direct"]
-        ]
-
-        logger.info(f"Testing {len(target_nodes)} proxies...")
-
-        results = {}
-        with ThreadPoolExecutor(max_workers=VALIDATION_CONFIG["max_workers"]) as executor:
-            futures = {
-                executor.submit(test_single_node, api_port, name): name
-                for name in target_nodes
-            }
-            completed = 0
-            for future in as_completed(futures):
-                name, delay = future.result()
-                if delay > 0:
-                    results[name] = delay
-                completed += 1
-                if completed % max(1, len(target_nodes) // 5) == 0:
-                    logger.info(f"Progress: {completed}/{len(target_nodes)}")
-
-        # 排序并输出
-        sorted_results = sorted(results.items(), key=lambda x: x[1])
-        logger.info(f"\n{'='*60}")
-        logger.info("🚀 Top 10 Fastest Proxies")
-        logger.info(f"{'='*60}")
-        for name, delay in sorted_results[:10]:
-            logger.info(f"  {delay:4d}ms  {name}")
-        logger.info(f"{'='*60}\n")
-
-        # 保存报告
-        os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
-        with open(REPORT_PATH, "w", encoding="utf-8") as f:
-            json.dump(dict(sorted_results), f, ensure_ascii=False, indent=2)
-        logger.info(f"Report saved to {REPORT_PATH}")
-
-        return dict(sorted_results)
-
-    except Exception as e:
-        logger.error(f"Speedtest error: {e}")
-        return {}
-
-
-def validate_nodes_with_mihomo(node_file_path="data/nodeALL.txt",timeout_ms=3000):
-    """
-    Mihomo 验证入口函数
-    
-    集成到 fetch_nodes.py 的主函数中
-    
-    Returns:
-        valid_nodes_list: 验证通过的节点列表
-    """
-    # 检查是否应该使用 Mihomo
-    if not VALIDATION_CONFIG["enable_mihomo"]:
-        logger.warning("Mihomo validation disabled, falling back to TCP")
-        return []
-
-    # 检查环境和依赖
-    if not os.path.exists(MIHOMO_BINARY) and not download_mihomo_core():
-        logger.warning("Mihomo not available, falling back to TCP")
-        return []
-
+def process_chunk(chunk_nodes, timeout_ms):
+    """处理单个分块的节点（优化1 + 优化3）"""
+    valid_nodes = []
     api_port = get_free_port()
+    
+    # 1. 将当前 chunk 的原始链接转为 Base64，写入临时订阅文件
+    b64_payload = base64.b64encode("\n".join(chunk_nodes).encode('utf-8')).decode('utf-8')
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+        f.write(b64_payload)
+        sub_file = f.name
+        
+    # 2. 生成极简的 Mihomo 配置文件，使用 proxy-providers 加载上述文件
+    config_yaml = f"""
+port: 7890
+socks-port: 7891
+external-controller: 127.0.0.1:{api_port}
+log-level: silent
+proxy-providers:
+  chunk-provider:
+    type: file
+    path: "{sub_file}"
+    health-check:
+      enable: false
+proxy-groups:
+  - name: ChunkGroup
+    type: select
+    use:
+      - chunk-provider
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False, encoding='utf-8') as f:
+        f.write(config_yaml)
+        config_file = f.name
 
+    process = None
     try:
-        # 生成配置
-        if not parse_and_build_config(api_port, node_file_path):
-            logger.warning("Failed to generate config")
-            return []
-
-        # 启动 Mihomo
-        logger.info(f"Starting Mihomo on port {api_port}...")
+        # 3. 启动 Mihomo (开启 stderr 捕获)
         process = subprocess.Popen(
-            [MIHOMO_BINARY, "-f", CONFIG_FILE],
+            [MIHOMO_BINARY, "-d", ".", "-f", config_file],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            cwd="."
         )
-
+        
+        # 4. 等待 API 就绪
+        if not wait_for_api_ready(api_port, process, timeout=API_STARTUP_TIMEOUT):
+            return valid_nodes
+            
+        # 5. 获取该 provider 解析后的所有代理列表
+        # 关键：Mihomo 返回的列表顺序与原始订阅文件中的顺序严格一致！
+        # 我们可以利用这个索引特性，将测速通过的 name 映射回原始的 chunk_nodes[i]
         try:
-            # 执行测速
-            valid_results = execute_speedtest(api_port)
-            valid_nodes = [name for name, delay in valid_results.items() if delay > 0]
-            logger.info(f"Validation complete: {len(valid_nodes)} nodes passed")
+            req = urllib.request.Request(f"http://127.0.0.1:{api_port}/providers/proxies/chunk-provider", method="GET")
+            with urllib.request.urlopen(req, timeout=3) as res:
+                data = json.loads(res.read().decode())
+                provider_proxies = data.get("proxies", [])
+        except Exception as e:
+            logger.error(f"Failed to get provider proxies from API: {e}")
             return valid_nodes
 
-        finally:
-            # 清理
-            logger.info("Stopping Mihomo...")
+        # 6. 并发测速
+        if provider_proxies:
+            with ThreadPoolExecutor(max_workers=50) as executor:
+                # 提交测速任务，并保留原始索引以便映射
+                futures = {
+                    executor.submit(test_proxy_delay, api_port, p["name"], timeout_ms): idx 
+                    for idx, p in enumerate(provider_proxies)
+                }
+                
+                for future in as_completed(futures):
+                    idx = futures[future]
+                    proxy_name, delay = future.result()
+                    if proxy_name:
+                        # 测速通过，通过索引取回原始链接！
+                        valid_nodes.append(chunk_nodes[idx])
+                        
+    except Exception as e:
+        logger.error(f"Error processing chunk: {e}")
+    finally:
+        # 7. 严格清理资源，防止 GitHub Actions 资源泄漏
+        if process and process.poll() is None:
             process.terminate()
             try:
-                process.wait(timeout=5)
+                process.wait(timeout=3)
             except subprocess.TimeoutExpired:
                 process.kill()
-            
-            if os.path.exists(CONFIG_FILE):
-                os.remove(CONFIG_FILE)
+                
+        for tmp_file in [sub_file, config_file]:
+            if os.path.exists(tmp_file):
+                try:
+                    os.remove(tmp_file)
+                except OSError:
+                    pass
+                    
+    return valid_nodes
 
+def validate_nodes_with_mihomo(input_file: str, timeout_ms: int = 3000) -> list:
+    """
+    主入口：读取文件，内部分块处理，返回有效节点原始链接列表 (优化3)
+    调用者 (fetch_nodes.py) 无需任何修改即可使用此函数。
+    """
+    logger.info("Initializing node testing validation process via Mihomo Core (Chunked mode)...")
+    
+    try:
+        with open(input_file, 'r', encoding='utf-8') as f:
+            raw_nodes = [line.strip() for line in f if line.strip() and "://" in line]
     except Exception as e:
-        logger.error(f"Mihomo validation failed: {e}")
+        logger.error(f"Failed to read input file: {e}")
         return []
+        
+    logger.info(f"Total unique raw nodes found: {len(raw_nodes)}")
+    
+    all_valid_nodes = []
+    total_chunks = (len(raw_nodes) + CHUNK_SIZE - 1) // CHUNK_SIZE
+    
+    for i in range(0, len(raw_nodes), CHUNK_SIZE):
+        chunk = raw_nodes[i:i+CHUNK_SIZE]
+        chunk_idx = (i // CHUNK_SIZE) + 1
+        logger.info(f"Processing chunk {chunk_idx}/{total_chunks} ({len(chunk)} nodes)...")
+        
+        valid_in_chunk = process_chunk(chunk, timeout_ms)
+        all_valid_nodes.extend(valid_in_chunk)
+        logger.info(f"Chunk {chunk_idx} complete: {len(valid_in_chunk)} nodes passed.")
+        
+    logger.info(f"Validation complete: {len(all_valid_nodes)} nodes passed out of {len(raw_nodes)}")
+    return all_valid_nodes
 
-
+# 如果直接运行此脚本，可用于独立测试
 if __name__ == "__main__":
-    # 独立测试模式
-    print("This module is designed to be imported into fetch_nodes.py")
-    print("Do not run directly")
+    if len(sys.argv) > 1:
+        test_file = sys.argv[1]
+        results = validate_nodes_with_mihomo(test_file, timeout_ms=3000)
+        print(f"Final valid count: {len(results)}")
+    else:
+        logger.info("Usage: python validate_nodes_mihomo.py <input_file.txt>")
