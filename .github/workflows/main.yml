@@ -28,6 +28,17 @@ jobs:
       - name: Install dependencies
         run: pip install pyyaml requests
 
+      # ✨ 新增：为 GitHub Actions 环境预装 Mihomo（可选，加快速度）
+      - name: Pre-download Mihomo (GitHub Actions optimization)
+        if: runner.os == 'Linux'
+        run: |
+          python -c "
+          import os
+          os.environ['GITHUB_ACTIONS'] = 'true'
+          from validate_nodes_mihomo import download_mihomo_core
+          download_mihomo_core()
+          "
+          
       - name: Execute Fetch Script
         env:
           # 关键一步：注入内置 Token，防止 Python 脚本搜索 GitHub API 时被限流
