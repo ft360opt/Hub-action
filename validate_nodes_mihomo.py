@@ -9,10 +9,11 @@ import urllib.parse
 import subprocess
 import tempfile
 import logging
+import platform
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ================= 配置区 =================
-MIHOMO_BINARY = os.environ.get("MIHOMO_BINARY", "mihomo") # 允许通过环境变量指定二进制路径
+MIHOMO_BINARY = os.environ.get("MIHOMO_BINARY", "mihomo")
 CHUNK_SIZE = 500                                           # 每批处理节点数，避免 GitHub Actions OOM
 API_STARTUP_TIMEOUT = 30                                   # API 启动等待超时(秒)
 TEST_URL = "http://www.gstatic.com/generate_204"           # 测速目标 URL
@@ -20,6 +21,52 @@ TEST_URL = "http://www.gstatic.com/generate_204"           # 测速目标 URL
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
+
+def download_mihomo_core():
+    """下载适用于当前环境的 Mihomo 内核 (补回此函数以兼容您的 GitHub Actions)"""
+    if os.path.exists(MIHOMO_BINARY):
+        logger.info(f"Mihomo binary already exists at {MIHOMO_BINARY}")
+        return
+
+    logger.info("Downloading Mihomo core...")
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    
+    # 映射架构名称以匹配 Mihomo 的发布命名规范
+    if machine in ("x86_64", "amd64"):
+        arch = "amd64"
+    elif machine in ("aarch64", "arm64"):
+        arch = "arm64"
+    else:
+        arch = machine
+
+    if system == "linux":
+        # 使用 meta 版本的稳定 release (可根据需要调整为具体版本号或 latest)
+        download_url = f"https://github.com/MetaCubeX/mihomo/releases/download/v1.18.0/mihomo-linux-{arch}-v1.18.0.gz"
+    elif system == "darwin":
+        download_url = f"https://github.com/MetaCubeX/mihomo/releases/download/v1.18.0/mihomo-darwin-{arch}-v1.18.0.gz"
+    else:
+        raise RuntimeError(f"Unsupported OS: {system}")
+
+    gz_file = "mihomo.gz"
+    try:
+        req = urllib.request.Request(download_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response, open(gz_file, 'wb') as out_file:
+            out_file.write(response.read())
+        
+        # 解压
+        import gzip
+        with gzip.open(gz_file, 'rb') as f_in:
+            with open(MIHOMO_BINARY, 'wb') as f_out:
+                f_out.write(f_in.read())
+        
+        # 赋予执行权限
+        os.chmod(MIHOMO_BINARY, 0o755)
+        os.remove(gz_file)
+        logger.info(f"Successfully downloaded and extracted {MIHOMO_BINARY}")
+    except Exception as e:
+        logger.error(f"Failed to download Mihomo core: {e}")
+        raise
 
 def get_free_port():
     """获取一个操作系统分配的空闲端口"""
@@ -113,8 +160,6 @@ proxy-groups:
             return valid_nodes
             
         # 5. 获取该 provider 解析后的所有代理列表
-        # 关键：Mihomo 返回的列表顺序与原始订阅文件中的顺序严格一致！
-        # 我们可以利用这个索引特性，将测速通过的 name 映射回原始的 chunk_nodes[i]
         try:
             req = urllib.request.Request(f"http://127.0.0.1:{api_port}/providers/proxies/chunk-provider", method="GET")
             with urllib.request.urlopen(req, timeout=3) as res:
@@ -195,6 +240,9 @@ def validate_nodes_with_mihomo(input_file: str, timeout_ms: int = 3000) -> list:
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         test_file = sys.argv[1]
+        # 独立测试时也可选择先下载内核
+        if not os.path.exists(MIHOMO_BINARY):
+            download_mihomo_core()
         results = validate_nodes_with_mihomo(test_file, timeout_ms=3000)
         print(f"Final valid count: {len(results)}")
     else:
