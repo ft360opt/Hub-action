@@ -5,15 +5,31 @@
       "stars": 877,
       "forks": 123,
       "extracted_nodes": 3000,
-      "valid_nodes": 270,
+      "valid_nodes": 275,
       "quality_score": 100
+    },
+    {
+      "repository": "PuddinCat/BestClash",
+      "stars": 1645,
+      "forks": 105,
+      "extracted_nodes": 16,
+      "valid_nodes": 16,
+      "quality_score": 100
+    },
+    {
+      "repository": "hello-world-1989/cn-news",
+      "stars": 432,
+      "forks": 18,
+      "extracted_nodes": 8,
+      "valid_nodes": 2,
+      "quality_score": 98.0
     },
     {
       "repository": "MohammadBahemmat/V2ray-Collector",
       "stars": 41,
       "forks": 56,
-      "extracted_nodes": 482,
-      "valid_nodes": 11,
+      "extracted_nodes": 564,
+      "valid_nodes": 27,
       "quality_score": 92.8
     },
     {
@@ -29,7 +45,7 @@
       "stars": 50,
       "forks": 6,
       "extracted_nodes": 395,
-      "valid_nodes": 210,
+      "valid_nodes": 209,
       "quality_score": 86.0
     },
     {
@@ -42,27 +58,11 @@
     },
     {
       "repository": "ermaozi/get_subscribe",
-      "stars": 8989,
+      "stars": 8990,
       "forks": 669,
       "extracted_nodes": 29,
       "valid_nodes": 0,
       "quality_score": 60
-    },
-    {
-      "repository": "Leon406/SubCrawler",
-      "stars": 1528,
-      "forks": 221,
-      "extracted_nodes": 8,
-      "valid_nodes": 0,
-      "quality_score": 60
-    },
-    {
-      "repository": "AIsouler/MyClash",
-      "stars": 169,
-      "forks": 12,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 52.0
     },
     {
       "repository": "marshall888666/free_clash_subscribe",
@@ -77,59 +77,43 @@
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 146,
-      "valid_nodes": 139,
+      "valid_nodes": 134,
       "quality_score": 40.8
     },
     {
-      "repository": "LikaiLee/rss-reader",
-      "stars": 9,
-      "forks": 1,
+      "repository": "Freddd13/autoscore",
+      "stars": 15,
+      "forks": 38,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 8.2
+      "quality_score": 32.0
     },
     {
-      "repository": "ATang007ZH/freenode",
-      "stars": 8,
-      "forks": 1,
-      "extracted_nodes": 5,
-      "valid_nodes": 0,
-      "quality_score": 7.4
-    },
-    {
-      "repository": "feiniaovpn/Free-VPN",
-      "stars": 2,
-      "forks": 1,
+      "repository": "RingoCaviar/CainFlow",
+      "stars": 24,
+      "forks": 2,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 2.6
+      "quality_score": 21.2
     },
     {
-      "repository": "harrypapaai/limitless",
+      "repository": "cbusifabcap/daily_free_vpn",
+      "stars": 12,
+      "forks": 2,
+      "extracted_nodes": 480,
+      "valid_nodes": 0,
+      "quality_score": 11.6
+    },
+    {
+      "repository": "styleless-oldboy528/ispip",
       "stars": 1,
-      "forks": 1,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 1.8
-    },
-    {
-      "repository": "ABI-ZTROS/phantom-lkm",
-      "stars": 1,
-      "forks": 1,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 1.8
-    },
-    {
-      "repository": "VordaBrat/zeroReg-landing",
-      "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 0.0
+      "quality_score": 0.8
     },
     {
-      "repository": "feiniao1-VPN/Node-Airport---VPN",
+      "repository": "hepingan11/Guiwuli-Digital-Employee",
       "stars": 0,
       "forks": 0,
       "extracted_nodes": 0,
@@ -137,5 +121,5 @@
       "quality_score": 0.0
     }
   ],
-  "updated_at": "2026-06-02 09:10:08"
+  "updated_at": "2026-06-02 09:31:39"
 }
