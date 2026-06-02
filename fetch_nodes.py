@@ -538,24 +538,25 @@ def main():
     zero_node_blacklist.update(zero_node_repos)
     save_zero_node_blacklist(zero_node_blacklist)
 
-raw_node_list = list(unique_raw_nodes)
-logger.info(f"Total unique raw nodes found: {len(raw_node_list)}. Starting validation...")
-
-# 尝试 Mihomo 验证，失败则降级到 TCP
-mihomo_results = validate_nodes_with_mihomo(raw_node_list, OUTPUT_DIR / "nodeALL.txt")
-
-if mihomo_results:
-    # Mihomo 成功
-    valid_nodes_list = mihomo_results
-    logger.info(f"Mihomo validation completed: {len(valid_nodes_list)} valid nodes")
-    # 更新 tracker
-    for node_str in valid_nodes_list:
-        source_repo = tracker.node_sources.get(node_str)
-        if source_repo:
-            tracker.add_counts(source_repo, valid=1)
-else:
-    # 降级到 TCP 验证
-    logger.warning("Mihomo unavailable, falling back to TCP validation...")
+    raw_node_list = list(unique_raw_nodes)
+    logger.info(f"Total unique raw nodes found: {len(raw_node_list)}. Starting validation...")
+    
+    # 尝试 Mihomo 验证，失败则降级到 TCP
+    mihomo_results = validate_nodes_with_mihomo(raw_node_list, OUTPUT_DIR / "nodeALL.txt")
+    
+    if mihomo_results:
+        # Mihomo 成功
+        valid_nodes_list = mihomo_results
+        logger.info(f"Mihomo validation completed: {len(valid_nodes_list)} valid nodes")
+        # 更新 tracker
+        for node_str in valid_nodes_list:
+            source_repo = tracker.node_sources.get(node_str)
+            if source_repo:
+                tracker.add_counts(source_repo, valid=1)
+    else:
+        # 降级到 TCP 验证
+        logger.warning("Mihomo unavailable, falling back to TCP validation...")
+        
     valid_nodes_list = []
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(test_tcp, node): node for node in raw_node_list}
