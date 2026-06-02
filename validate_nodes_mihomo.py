@@ -13,7 +13,7 @@ import platform
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ================= 配置区 =================
-MIHOMO_BINARY = os.environ.get("MIHOMO_BINARY", "mihomo")
+MIHOMO_BINARY = os.environ.get("MIHOMO_BINARY", "./mihomo")
 CHUNK_SIZE = 500                                           # 每批处理节点数，避免 GitHub Actions OOM
 API_STARTUP_TIMEOUT = 30                                   # API 启动等待超时(秒)
 TEST_URL = "http://www.gstatic.com/generate_204"           # 测速目标 URL
@@ -24,11 +24,12 @@ logger = logging.getLogger(__name__)
 
 def download_mihomo_core():
     """下载适用于当前环境的 Mihomo 内核 (补回此函数以兼容您的 GitHub Actions)"""
-    if os.path.exists(MIHOMO_BINARY):
-        logger.info(f"Mihomo binary already exists at {MIHOMO_BINARY}")
+    abs_binary_path = os.path.abspath(MIHOMO_BINARY)
+    if os.path.exists(abs_binary_path):
+        logger.info(f"Mihomo binary already exists at {abs_binary_path}")
         return
 
-    logger.info("Downloading Mihomo core...")
+    logger.info("Downloading Mihomo core to {abs_binary_path}...")
     system = platform.system().lower()
     machine = platform.machine().lower()
     
@@ -57,13 +58,13 @@ def download_mihomo_core():
         # 解压
         import gzip
         with gzip.open(gz_file, 'rb') as f_in:
-            with open(MIHOMO_BINARY, 'wb') as f_out:
+            with open(abs_binary_path, 'wb') as f_out:
                 f_out.write(f_in.read())
         
         # 赋予执行权限
-        os.chmod(MIHOMO_BINARY, 0o755)
+        os.chmod(abs_binary_path, 0o755)
         os.remove(gz_file)
-        logger.info(f"Successfully downloaded and extracted {MIHOMO_BINARY}")
+        logger.info(f"Successfully downloaded and extracted to {abs_binary_path}")
     except Exception as e:
         logger.error(f"Failed to download Mihomo core: {e}")
         raise
