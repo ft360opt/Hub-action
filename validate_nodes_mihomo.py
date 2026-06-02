@@ -44,10 +44,10 @@ MIHOMO_BINARY = "./mihomo"
 CONFIG_FILE = "config.yaml"
 REPORT_PATH = "data/speedtest_report.json"
 
-logger.basicConfig(
+logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s: %(message)s"
-) if not logger.handlers else None
+) if not logging.root.handlers else None
 
 
 # ===========================
