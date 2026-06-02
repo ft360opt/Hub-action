@@ -34,7 +34,7 @@ VALIDATION_CONFIG = {
     "timeout_ms": 2500,
     "max_workers": 15,
     "test_url": "https://www.google.com/generate_204",
-    "api_startup_timeout": 15,  # 最多等待15秒让API就绪
+    "api_startup_timeout": 60,  # 最多等待60秒让API就绪
     "enable_mihomo": True,  # 可通过环境变量覆盖
 }
 
