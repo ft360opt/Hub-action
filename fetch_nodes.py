@@ -539,48 +539,52 @@ def main():
     save_zero_node_blacklist(zero_node_blacklist)
 
     raw_node_list = list(unique_raw_nodes)
-    logger.info(f"Total unique raw nodes found: {len(raw_node_list)}. Starting validation...")
+    logger.info(f"Total unique raw nodes found: {len(raw_node_list)}.")
     
-    # 尝试 Mihomo 验证，失败则降级到 TCP
-    mihomo_results = validate_nodes_with_mihomo(raw_node_list, OUTPUT_DIR / "nodeALL.txt")
+     # 1. 必须先写出原始文件，才能供给 Mihomo 读取
+     node_all_path = OUTPUT_DIR / "nodeALL.txt"
+     try:
+         with open(node_all_path, "w", encoding="utf-8") as f:
+             f.write("\n".join(raw_node_list))
+         logger.info(f"Wrote {len(raw_node_list)} raw nodes to nodeALL.txt")
+     except IOError as e:
+         logger.error(f"Failed to write raw nodes file: {e}")
+ 
+     # 2. 尝试 Mihomo 验证 (修复参数传递：第一个参数接收文件路径字符串，第二个接收超时时间)
+     logger.info("Initializing node testing validation process via Mihomo Core...")
+     valid_nodes_list = []
+     mihomo_results = validate_nodes_with_mihomo(str(node_all_path), timeout_ms=int(TIMEOUT_SECONDS * 1000))
     
     if mihomo_results:
         # Mihomo 成功
         valid_nodes_list = mihomo_results
         logger.info(f"Mihomo validation completed: {len(valid_nodes_list)} valid nodes")
-        # 更新 tracker
         for node_str in valid_nodes_list:
             source_repo = tracker.node_sources.get(node_str)
             if source_repo:
                 tracker.add_counts(source_repo, valid=1)
     else:
-        # 降级到 TCP 验证
+        # 仅在 Mihomo 失败或为空时，降级到 TCP 验证 (作为真正的 Fallback)
         logger.warning("Mihomo unavailable, falling back to TCP validation...")
         
-    valid_nodes_list = []
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = {executor.submit(test_tcp, node): node for node in raw_node_list}
-        for future in as_completed(futures):
-            try:
-                node_str, is_valid = future.result()
-                if is_valid:
-                    valid_nodes_list.append(node_str)
-                    source_repo = tracker.node_sources.get(node_str)
-                    if source_repo:
-                        tracker.add_counts(source_repo, valid=1)
-            except Exception as e:
-                logger.error(f"Error processing validation result: {e}")
-    logger.info(f"TCP validation completed: {len(valid_nodes_list)} valid nodes")
+         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+             futures = {executor.submit(test_tcp, node): node for node in raw_node_list}
+             for future in as_completed(futures):
+                 try:
+                     node_str, is_valid = future.result()
+                     if is_valid:
+                         valid_nodes_list.append(node_str)
+                         source_repo = tracker.node_sources.get(node_str)
+                         if source_repo:
+                             tracker.add_counts(source_repo, valid=1)
+                 except Exception as e:
+                     logger.error(f"Error processing validation result: {e}")
+         logger.info(f"TCP validation completed: {len(valid_nodes_list)} valid nodes")
 
     logger.info(f"Validated {len(valid_nodes_list)} working nodes out of {len(raw_node_list)}")
 
     # Write output files once after all processing is complete
     try:
-        # Output unverified items as plaintext lines into data/nodeALL.txt
-        with open(OUTPUT_DIR / "nodeALL.txt", "w", encoding="utf-8") as f:
-            f.write("\n".join(raw_node_list))
-        logger.info(f"Wrote {len(raw_node_list)} raw nodes to nodeALL.txt")
-
         # Base64-encode verified items into data/nodes.txt
         valid_payload_string = "\n".join(valid_nodes_list)
         base64_encoded_bytes = base64.b64encode(valid_payload_string.encode('utf-8'))
