@@ -567,19 +567,19 @@ def main():
         # 仅在 Mihomo 失败或为空时，降级到 TCP 验证 (作为真正的 Fallback)
         logger.warning("Mihomo unavailable, falling back to TCP validation...")
         
-         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-             futures = {executor.submit(test_tcp, node): node for node in raw_node_list}
-             for future in as_completed(futures):
-                 try:
-                     node_str, is_valid = future.result()
-                     if is_valid:
-                         valid_nodes_list.append(node_str)
-                         source_repo = tracker.node_sources.get(node_str)
-                         if source_repo:
-                             tracker.add_counts(source_repo, valid=1)
-                 except Exception as e:
-                     logger.error(f"Error processing validation result: {e}")
-         logger.info(f"TCP validation completed: {len(valid_nodes_list)} valid nodes")
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {executor.submit(test_tcp, node): node for node in raw_node_list}
+            for future in as_completed(futures):
+                try:
+                    node_str, is_valid = future.result()
+                    if is_valid:
+                        valid_nodes_list.append(node_str)
+                        source_repo = tracker.node_sources.get(node_str)
+                        if source_repo:
+                            tracker.add_counts(source_repo, valid=1)
+                except Exception as e:
+                    logger.error(f"Error processing validation result: {e}")
+        logger.info(f"TCP validation completed: {len(valid_nodes_list)} valid nodes")
 
     logger.info(f"Validated {len(valid_nodes_list)} working nodes out of {len(raw_node_list)}")
 
