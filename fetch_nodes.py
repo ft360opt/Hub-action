@@ -10,6 +10,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
+from validate_nodes_mihomo import validate_nodes_with_mihomo
+
 # External Libraries
 import requests
 from requests.adapters import HTTPAdapter
@@ -536,11 +538,25 @@ def main():
     zero_node_blacklist.update(zero_node_repos)
     save_zero_node_blacklist(zero_node_blacklist)
 
-    raw_node_list = list(unique_raw_nodes)
-    logger.info(f"Total unique raw nodes found: {len(raw_node_list)}. Validating TCP connections...")
+raw_node_list = list(unique_raw_nodes)
+logger.info(f"Total unique raw nodes found: {len(raw_node_list)}. Starting validation...")
+
+# 尝试 Mihomo 验证，失败则降级到 TCP
+mihomo_results = validate_nodes_with_mihomo(raw_node_list, OUTPUT_DIR / "nodeALL.txt")
+
+if mihomo_results:
+    # Mihomo 成功
+    valid_nodes_list = mihomo_results
+    logger.info(f"Mihomo validation completed: {len(valid_nodes_list)} valid nodes")
+    # 更新 tracker
+    for node_str in valid_nodes_list:
+        source_repo = tracker.node_sources.get(node_str)
+        if source_repo:
+            tracker.add_counts(source_repo, valid=1)
+else:
+    # 降级到 TCP 验证
+    logger.warning("Mihomo unavailable, falling back to TCP validation...")
     valid_nodes_list = []
-    
-    # Validate nodes using thread pool
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(test_tcp, node): node for node in raw_node_list}
         for future in as_completed(futures):
@@ -548,12 +564,12 @@ def main():
                 node_str, is_valid = future.result()
                 if is_valid:
                     valid_nodes_list.append(node_str)
-                    # Update tracker for the source repository
                     source_repo = tracker.node_sources.get(node_str)
                     if source_repo:
                         tracker.add_counts(source_repo, valid=1)
             except Exception as e:
                 logger.error(f"Error processing validation result: {e}")
+    logger.info(f"TCP validation completed: {len(valid_nodes_list)} valid nodes")
 
     logger.info(f"Validated {len(valid_nodes_list)} working nodes out of {len(raw_node_list)}")
 
