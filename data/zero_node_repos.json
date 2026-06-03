@@ -53,6 +53,7 @@
     "feiniaovpn/--VPN",
     "feiniaovpn/Free-VPN",
     "feiniaovpn/Game-Accelerator---VPN",
+    "feiniaovpn/feiniao-VPN",
     "find-xposed-magisk/vercel-reverse-proxy",
     "fxai666/fxai-toolkit",
     "gfpcom/free-proxy-list",
@@ -60,9 +61,12 @@
     "hepingan11/Guiwuli-Digital-Employee",
     "junjun266/FreeProxyGo",
     "lerjtl/Testfree",
+    "liangshengyong/LanWan",
     "licheng527/Free-servers",
     "lucifer988/clash-subscribe",
     "maiyulao/ResoHub",
+    "onl35461-debug/Node-climbing-wall-ladder---VPN",
+    "onl35461-debug/Wall-climbing-ladder-VPN",
     "parsamrrelax/auto-warp-config",
     "peacefulgeek/debtfree-wedding",
     "prima32/warp-config-generator-vercel",
@@ -88,5 +92,5 @@
     "yzgolden86/Qreminder",
     "zinan92/daily-newsletter"
   ],
-  "updated_at": "2026-06-03 01:52:34"
+  "updated_at": "2026-06-03 02:07:44"
 }

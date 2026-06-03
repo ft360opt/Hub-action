@@ -5,15 +5,23 @@
       "stars": 886,
       "forks": 125,
       "extracted_nodes": 3000,
-      "valid_nodes": 15,
+      "valid_nodes": 260,
       "quality_score": 100
+    },
+    {
+      "repository": "MohammadBahemmat/V2ray-Collector",
+      "stars": 42,
+      "forks": 55,
+      "extracted_nodes": 67,
+      "valid_nodes": 4,
+      "quality_score": 93.6
     },
     {
       "repository": "wenxig/free-nodes-sub",
       "stars": 50,
       "forks": 6,
       "extracted_nodes": 399,
-      "valid_nodes": 5,
+      "valid_nodes": 193,
       "quality_score": 86.0
     },
     {
@@ -25,27 +33,27 @@
       "quality_score": 60
     },
     {
-      "repository": "hello-world-1989/cn-news",
-      "stars": 432,
-      "forks": 18,
-      "extracted_nodes": 8,
-      "valid_nodes": 0,
-      "quality_score": 58.0
+      "repository": "saishun/TyporaTheme",
+      "stars": 4,
+      "forks": 16,
+      "extracted_nodes": 241,
+      "valid_nodes": 168,
+      "quality_score": 59.2
     },
     {
-      "repository": "MohammadBahemmat/V2ray-Collector",
-      "stars": 42,
-      "forks": 55,
-      "extracted_nodes": 139,
+      "repository": "bin1site1/V2rayFree",
+      "stars": 81,
+      "forks": 10,
+      "extracted_nodes": 17,
       "valid_nodes": 0,
-      "quality_score": 53.6
+      "quality_score": 50.0
     },
     {
       "repository": "marshall888666/free_clash_subscribe",
       "stars": 8,
       "forks": 0,
       "extracted_nodes": 77,
-      "valid_nodes": 2,
+      "valid_nodes": 47,
       "quality_score": 46.4
     },
     {
@@ -53,41 +61,41 @@
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 141,
-      "valid_nodes": 4,
+      "valid_nodes": 137,
       "quality_score": 40.8
     },
     {
-      "repository": "cbusifabcap/daily_free_vpn",
-      "stars": 12,
-      "forks": 2,
-      "extracted_nodes": 480,
+      "repository": "liangshengyong/LanWan",
+      "stars": 35,
+      "forks": 4,
+      "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 11.6
+      "quality_score": 32.0
     },
     {
-      "repository": "fxai666/fxai-toolkit",
-      "stars": 8,
+      "repository": "feiniaovpn/feiniao-VPN",
+      "stars": 0,
       "forks": 1,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 7.4
+      "quality_score": 1.0
     },
     {
-      "repository": "FanchangWang/clash_config",
-      "stars": 7,
-      "forks": 1,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 6.6
-    },
-    {
-      "repository": "JHC000abc/ProxyParseForSing-box",
-      "stars": 2,
+      "repository": "onl35461-debug/Node-climbing-wall-ladder---VPN",
+      "stars": 1,
       "forks": 0,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 1.6
+      "quality_score": 0.8
+    },
+    {
+      "repository": "onl35461-debug/Wall-climbing-ladder-VPN",
+      "stars": 0,
+      "forks": 0,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 0.0
     }
   ],
-  "updated_at": "2026-06-03 01:52:40"
+  "updated_at": "2026-06-03 02:08:20"
 }
