@@ -11,6 +11,9 @@ import tempfile
 import logging
 import platform
 import random
+import http.server
+import socketserver
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ================= 配置区 =================
@@ -77,7 +80,7 @@ def is_valid_node_format(node: str) -> bool:
             if not isinstance(data, dict): return False
             if not data.get("add") or not data.get("port") or not data.get("id"): return False
             for v in data.values():
-                if v is None: return False
+                if v is None: return False # 拦截导致 Go Panic 的 null 值
             return True
         except Exception: return False
             
@@ -125,18 +128,44 @@ def test_proxy_delay(api_port, proxy_name, timeout_ms):
     except Exception: pass
     return None, None
 
-def process_chunk(chunk_nodes, timeout_ms):
+# 【核心新增】：伪装成本地网络订阅服务器，激活 Mihomo 原生解析引擎
+class SubscriptionHandler(http.server.BaseHTTPRequestHandler):
+    payload = ""
+    
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        # Mihomo 下载到 Base64 后，会自动解码并逐行解析 vmess/vless/trojan 等 URI
+        self.wfile.write(base64.b64encode(self.payload.encode('utf-8')))
+        
+    def log_message(self, format, *args):
+        pass # 屏蔽 HTTP 服务器的默认日志输出
+
+def process_chunk(chunk_nodes, timeout_ms, chunk_idx):
     valid_nodes = []
     api_port = get_free_port()
     
+    # 1. 准备负载并启动本地 HTTP 服务器
     sanitized_nodes = [sanitize_uri(n) for n in chunk_nodes]
     raw_text = "\n".join(sanitized_nodes)
+    SubscriptionHandler.payload = raw_text
     
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-        f.write(raw_text)
-        sub_file = f.name
+    try:
+        httpd = socketserver.TCPServer(("127.0.0.1", 0), SubscriptionHandler)
+    except OSError:
+        time.sleep(1)
+        httpd = socketserver.TCPServer(("127.0.0.1", 0), SubscriptionHandler)
         
-    # 【关键修改】：将 log-level 改为 info，捕获所有解析警告
+    sub_port = httpd.server_address[1]
+    server_thread = threading.Thread(target=httpd.serve_forever)
+    server_thread.daemon = True
+    server_thread.start()
+    
+    # 必须使用唯一的 cache 文件名，防止 Mihomo 缓存错乱
+    cache_file = f"./chunk_cache_{chunk_idx}.yaml"
+    
+    # 【核心修改】：使用 type: http 指向我们本地的服务器
     config_yaml = f"""
 port: 7890
 socks-port: 7891
@@ -144,9 +173,10 @@ external-controller: 127.0.0.1:{api_port}
 log-level: info
 proxy-providers:
   chunk-provider:
-    type: file
-    format: text
-    path: "{sub_file}"
+    type: http
+    url: "http://127.0.0.1:{sub_port}/sub"
+    interval: 3600
+    path: "{cache_file}"
     health-check:
       enable: false
 proxy-groups:
@@ -176,8 +206,9 @@ proxy-groups:
             return valid_nodes
             
         try:
+            # 给 Mihomo 留出 HTTP 下载和 Base64 解码的时间
             req = urllib.request.Request(f"http://127.0.0.1:{api_port}/providers/proxies/chunk-provider", method="GET")
-            with urllib.request.urlopen(req, timeout=3) as res:
+            with urllib.request.urlopen(req, timeout=5) as res:
                 data = json.loads(res.read().decode())
                 provider_proxies = [p for p in data.get("proxies", []) if p["name"] not in ("DIRECT", "REJECT", "GLOBAL")]
         except Exception as e:
@@ -189,21 +220,14 @@ proxy-groups:
             try:
                 with open(log_file_name, 'r', encoding='utf-8') as lf:
                     logs = [line.strip() for line in lf if line.strip()]
-                    # 提取包含解析失败关键字的日志
-                    parse_errors = [l for l in logs if any(k in l.lower() for k in ['parse', 'fail', 'error', 'unsupported', 'invalid', 'reject', 'unknown'])]
+                    parse_errors = [l for l in logs if any(k in l.lower() for k in ['parse', 'fail', 'error', 'unsupported', 'invalid', 'reject', 'unknown', 'panic'])]
                     if parse_errors:
                         logger.warning(f"Mihomo rejected nodes. Sample errors:")
-                        unique_errors = list(set([e.split('msg=')[-1].strip('"') if 'msg=' in e else e for e in parse_errors]))[:5]
+                        unique_errors = list(set([e.split('msg=')[-1].strip('"') if 'msg=' in e else e for e in parse_errors]))[:3]
                         for err in unique_errors:
                             logger.warning(f"  > {err}")
-                    elif logs:
-                        logger.warning(f"Mihomo log (no specific parse errors found, showing raw):")
-                        for l in logs[:3]:
-                            logger.warning(f"  > {l}")
-            except Exception as e:
-                logger.warning(f"Failed to read Mihomo log: {e}")
+            except Exception: pass
                 
-            # 【终极诊断】：抽样打印被 Python 认为 valid，但被 Mihomo 丢弃的节点真面目
             samples = random.sample(chunk_nodes, min(3, len(chunk_nodes)))
             logger.warning(f"Sample 'valid' nodes that Mihomo might be rejecting:")
             for s in samples:
@@ -224,12 +248,18 @@ proxy-groups:
     except Exception as e:
         logger.error(f"Error processing chunk: {e}")
     finally:
+        # 严格清理 HTTP 服务器和进程
+        try:
+            httpd.shutdown()
+            server_thread.join(timeout=2)
+        except Exception: pass
+        
         if process and process.poll() is None:
             process.terminate()
             try: process.wait(timeout=3)
             except subprocess.TimeoutExpired: process.kill()
             
-        for tmp_file in [sub_file, config_file, log_file_name]:
+        for tmp_file in [config_file, log_file_name, cache_file]:
             if os.path.exists(tmp_file):
                 try: os.remove(tmp_file)
                 except OSError: pass
@@ -261,7 +291,7 @@ def validate_nodes_with_mihomo(input_file: str, timeout_ms: int = 5000) -> list:
         chunk_idx = (i // CHUNK_SIZE) + 1
         logger.info(f"Processing chunk {chunk_idx}/{total_chunks} ({len(chunk)} nodes)...")
         
-        valid_in_chunk = process_chunk(chunk, timeout_ms)
+        valid_in_chunk = process_chunk(chunk, timeout_ms, chunk_idx)
         all_valid_nodes.extend(valid_in_chunk)
         logger.info(f"Chunk {chunk_idx} complete: {len(valid_in_chunk)} nodes passed.")
         
