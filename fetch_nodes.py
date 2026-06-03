@@ -10,7 +10,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-from validate_nodes_mihomo import validate_nodes_with_mihomo
+#from validate_nodes_mihomo import validate_nodes_with_mihomo
+from debug_nodes_mihomo import validate_nodes_with_mihomo
 
 # External Libraries
 import requests
