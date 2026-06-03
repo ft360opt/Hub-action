@@ -41,9 +41,10 @@ def download_mihomo_core():
         arch = machine
 
     if system == "linux":
-        download_url = f"https://github.com/MetaCubeX/mihomo/releases/download/v1.18.0/mihomo-linux-{arch}-v1.18.0.gz"
+        # 使用最新的 alpha 或 stable 版本，确保支持 format: text
+        download_url = f"https://github.com/MetaCubeX/mihomo/releases/download/v1.18.10/mihomo-linux-{arch}-v1.18.10.gz"
     elif system == "darwin":
-        download_url = f"https://github.com/MetaCubeX/mihomo/releases/download/v1.18.0/mihomo-darwin-{arch}-v1.18.0.gz"
+        download_url = f"https://github.com/MetaCubeX/mihomo/releases/download/v1.18.10/mihomo-darwin-{arch}-v1.18.10.gz"
     else:
         raise RuntimeError(f"Unsupported OS: {system}")
 
@@ -64,10 +65,24 @@ def download_mihomo_core():
         logger.info(f"Successfully downloaded and extracted to {abs_binary_path}")
     except Exception as e:
         logger.error(f"Failed to download Mihomo core: {e}")
-        raise
+        # 如果新版本下载失败，回退到 v1.18.0
+        try:
+            fallback_url = download_url.replace("v1.18.10", "v1.18.0")
+            req = urllib.request.Request(fallback_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response, open(gz_file, 'wb') as out_file:
+                out_file.write(response.read())
+            with gzip.open(gz_file, 'rb') as f_in:
+                with open(abs_binary_path, 'wb') as f_out:
+                    f_out.write(f_in.read())
+            os.chmod(abs_binary_path, 0o755)
+            os.remove(gz_file)
+            logger.info(f"Successfully downloaded fallback v1.18.0")
+        except Exception as e2:
+            logger.error(f"Fallback download also failed: {e2}")
+            raise
 
 def is_valid_node_format(node: str) -> bool:
-    """极其严格的预清洗：拦截所有可能导致 Mihomo Panic 或解析失败的畸形链接"""
+    """严格的预清洗：拦截导致 Mihomo Panic 的畸形链接"""
     if not node or "://" not in node:
         return False
     scheme, _, rest = node.partition("://")
@@ -79,19 +94,11 @@ def is_valid_node_format(node: str) -> bool:
             payload += "=" * ((4 - len(payload) % 4) % 4)
             decoded = base64.b64decode(payload).decode('utf-8', errors='ignore')
             data = json.loads(decoded)
-            if not isinstance(data, dict):
-                return False
-            
-            # 核心字段必须存在
-            if not data.get("add") or not data.get("port") or not data.get("id"):
-                return False
-                
-            # 【致命检查】：Mihomo Go 代码中大量使用 .(string) 强转
-            # 如果 JSON 中任何字段的值是 null (Python 的 None)，Go 会直接 Panic 崩溃
+            if not isinstance(data, dict): return False
+            if not data.get("add") or not data.get("port") or not data.get("id"): return False
+            # 致命检查：防止 Go 强转 null 导致 Panic
             for v in data.values():
-                if v is None:
-                    return False
-                    
+                if v is None: return False
             return True
         except Exception:
             return False
@@ -100,22 +107,19 @@ def is_valid_node_format(node: str) -> bool:
         try:
             parsed = urllib.parse.urlparse(node)
             return bool(parsed.hostname and parsed.port and parsed.username)
-        except Exception:
-            return False
+        except Exception: return False
 
     elif scheme == "ss":
         try:
             parsed = urllib.parse.urlparse(node)
             return bool(parsed.hostname)
-        except Exception:
-            return False
+        except Exception: return False
 
     elif scheme == "trojan":
         try:
             parsed = urllib.parse.urlparse(node)
             return bool(parsed.hostname and parsed.port and parsed.username)
-        except Exception:
-            return False
+        except Exception: return False
 
     elif scheme in ("ssr", "hysteria", "hysteria2", "tuic", "snell"):
         return len(rest) > 10
@@ -166,14 +170,13 @@ def process_chunk(chunk_nodes, timeout_ms):
     valid_nodes = []
     api_port = get_free_port()
     
-    # 【核心修复】：Mihomo 的 file provider 必须使用单行 Base64 编码才能正确触发订阅解析
+    # 【终极修复】：直接写入明文（每行一个 URI），不需要 Base64！
     raw_text = "\n".join(chunk_nodes)
-    b64_payload = base64.b64encode(raw_text.encode('utf-8')).decode('utf-8')
-    
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-        f.write(b64_payload)
+        f.write(raw_text)
         sub_file = f.name
         
+    # 【终极修复】：在 proxy-providers 中显式声明 format: text
     config_yaml = f"""
 port: 7890
 socks-port: 7891
@@ -182,6 +185,7 @@ log-level: silent
 proxy-providers:
   chunk-provider:
     type: file
+    format: text  # 告诉 Mihomo 这是纯文本 URI 列表
     path: "{sub_file}"
     health-check:
       enable: false
@@ -230,7 +234,6 @@ proxy-groups:
                     idx = futures[future]
                     proxy_name, delay = future.result()
                     if proxy_name:
-                        # 由于预清洗极其严格，这里的 idx 映射是 100% 安全的
                         valid_nodes.append(chunk_nodes[idx])
                         
     except Exception as e:
