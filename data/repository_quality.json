@@ -5,7 +5,7 @@
       "stars": 886,
       "forks": 125,
       "extracted_nodes": 3000,
-      "valid_nodes": 241,
+      "valid_nodes": 244,
       "quality_score": 100
     },
     {
@@ -20,7 +20,7 @@
       "repository": "MohammadBahemmat/V2ray-Collector",
       "stars": 42,
       "forks": 55,
-      "extracted_nodes": 439,
+      "extracted_nodes": 299,
       "valid_nodes": 12,
       "quality_score": 93.6
     },
@@ -29,7 +29,7 @@
       "stars": 252,
       "forks": 9,
       "extracted_nodes": 28,
-      "valid_nodes": 12,
+      "valid_nodes": 13,
       "quality_score": 89.0
     },
     {
@@ -41,14 +41,6 @@
       "quality_score": 87.0
     },
     {
-      "repository": "tglaoshiji/nodeshare",
-      "stars": 170,
-      "forks": 7,
-      "extracted_nodes": 801,
-      "valid_nodes": 121,
-      "quality_score": 87.0
-    },
-    {
       "repository": "wenxig/free-nodes-sub",
       "stars": 50,
       "forks": 6,
@@ -57,10 +49,34 @@
       "quality_score": 86.0
     },
     {
+      "repository": "TG-NAV/nodeshare",
+      "stars": 75,
+      "forks": 3,
+      "extracted_nodes": 18,
+      "valid_nodes": 5,
+      "quality_score": 83.0
+    },
+    {
       "repository": "ermaozi/get_subscribe",
-      "stars": 8991,
+      "stars": 8992,
       "forks": 669,
       "extracted_nodes": 29,
+      "valid_nodes": 0,
+      "quality_score": 60
+    },
+    {
+      "repository": "ripaojiedian/freenode",
+      "stars": 2267,
+      "forks": 122,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 60
+    },
+    {
+      "repository": "Silentely/AdBlock-Acceleration",
+      "stars": 550,
+      "forks": 58,
+      "extracted_nodes": 8,
       "valid_nodes": 0,
       "quality_score": 60
     },
@@ -97,29 +113,13 @@
       "quality_score": 11.6
     },
     {
-      "repository": "clashv2ray-hub/clashv2rayshare",
-      "stars": 6,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 4.8
-    },
-    {
-      "repository": "tglaoshiji/aa",
-      "stars": 3,
+      "repository": "CB-X2-Jun/proxy-lists",
+      "stars": 4,
       "forks": 1,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 3.4
-    },
-    {
-      "repository": "achuanya/rss-lhasa",
-      "stars": 2,
-      "forks": 1,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 2.6
+      "quality_score": 4.2
     }
   ],
-  "updated_at": "2026-06-03 00:35:03"
+  "updated_at": "2026-06-03 00:48:25"
 }
