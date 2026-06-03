@@ -14,7 +14,9 @@
     "Freedom-Guard/Freedom-Guard",
     "GmSSL/GmSSL-Nodejs",
     "HZ-PRE/appsc",
+    "HandsomeMJZ/cfip",
     "Iceman717/iptv-api",
+    "KazuhaHub/Passwall-Sub-Panel",
     "LikaiLee/rss-reader",
     "LoneKingCode/free-proxy-db",
     "NeelLogic/Chinese-Zodiac-Finder",
@@ -71,13 +73,16 @@
     "tglaoshiji/aa",
     "toml66l/fanqiang",
     "ts-sf/fly",
+    "v2raynnodes/clashnode",
+    "v2raynnodes/v2rayclash",
     "vipxb/zhibo",
     "wansheng8/adblock",
     "wanwushequ/cfyxip",
+    "weixunkkkkk/fabuhuizixun",
     "xi0yu/n8n-nodes-minimax-unified",
     "yezuofan/free-internet-guide",
     "yzgolden86/Qreminder",
     "zinan92/daily-newsletter"
   ],
-  "updated_at": "2026-06-03 00:58:40"
+  "updated_at": "2026-06-03 01:28:06"
 }
