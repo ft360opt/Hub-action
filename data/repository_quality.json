@@ -5,71 +5,55 @@
       "stars": 886,
       "forks": 125,
       "extracted_nodes": 3000,
-      "valid_nodes": 275,
+      "valid_nodes": 3,
       "quality_score": 100
-    },
-    {
-      "repository": "hello-world-1989/cn-news",
-      "stars": 432,
-      "forks": 18,
-      "extracted_nodes": 8,
-      "valid_nodes": 2,
-      "quality_score": 98.0
-    },
-    {
-      "repository": "MohammadBahemmat/V2ray-Collector",
-      "stars": 42,
-      "forks": 55,
-      "extracted_nodes": 255,
-      "valid_nodes": 14,
-      "quality_score": 93.6
     },
     {
       "repository": "wenxig/free-nodes-sub",
       "stars": 50,
       "forks": 6,
       "extracted_nodes": 399,
-      "valid_nodes": 192,
+      "valid_nodes": 1,
       "quality_score": 86.0
     },
     {
       "repository": "ermaozi/get_subscribe",
-      "stars": 8993,
+      "stars": 8994,
       "forks": 669,
       "extracted_nodes": 29,
       "valid_nodes": 0,
       "quality_score": 60
     },
     {
-      "repository": "HandsomeMJZ/cfip",
-      "stars": 139,
-      "forks": 32,
-      "extracted_nodes": 0,
+      "repository": "hello-world-1989/cn-news",
+      "stars": 432,
+      "forks": 18,
+      "extracted_nodes": 8,
       "valid_nodes": 0,
-      "quality_score": 60
+      "quality_score": 58.0
+    },
+    {
+      "repository": "MohammadBahemmat/V2ray-Collector",
+      "stars": 42,
+      "forks": 55,
+      "extracted_nodes": 139,
+      "valid_nodes": 0,
+      "quality_score": 53.6
     },
     {
       "repository": "v2raynnodes/clashfree",
       "stars": 7,
       "forks": 1,
       "extracted_nodes": 1285,
-      "valid_nodes": 396,
+      "valid_nodes": 3,
       "quality_score": 46.6
-    },
-    {
-      "repository": "marshall888666/free_clash_subscribe",
-      "stars": 8,
-      "forks": 0,
-      "extracted_nodes": 77,
-      "valid_nodes": 47,
-      "quality_score": 46.4
     },
     {
       "repository": "g-star1024/my-clash-subscribe",
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 141,
-      "valid_nodes": 134,
+      "valid_nodes": 1,
       "quality_score": 40.8
     },
     {
@@ -81,37 +65,29 @@
       "quality_score": 40.4
     },
     {
-      "repository": "weixunkkkkk/fabuhuizixun",
+      "repository": "cbusifabcap/daily_free_vpn",
+      "stars": 12,
+      "forks": 2,
+      "extracted_nodes": 480,
+      "valid_nodes": 0,
+      "quality_score": 11.6
+    },
+    {
+      "repository": "marshall888666/free_clash_subscribe",
+      "stars": 8,
+      "forks": 0,
+      "extracted_nodes": 77,
+      "valid_nodes": 0,
+      "quality_score": 6.4
+    },
+    {
+      "repository": "AiLee77/proxyip.cczz.eu.cc",
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 0,
       "valid_nodes": 0,
       "quality_score": 0.8
-    },
-    {
-      "repository": "v2raynnodes/v2rayclash",
-      "stars": 1,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.8
-    },
-    {
-      "repository": "v2raynnodes/clashnode",
-      "stars": 1,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.8
-    },
-    {
-      "repository": "KazuhaHub/Passwall-Sub-Panel",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
     }
   ],
-  "updated_at": "2026-06-03 01:28:24"
+  "updated_at": "2026-06-03 01:37:00"
 }
