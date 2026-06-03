@@ -18,7 +18,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ================= 配置区 =================
 MIHOMO_BINARY = os.environ.get("MIHOMO_BINARY", "./mihomo")
-CHUNK_SIZE = 500                                           
+# 【关键修改】：缩小批次到 50，物理隔离“毒节点”导致的整体 Panic
+CHUNK_SIZE = 50                                            
 API_STARTUP_TIMEOUT = 30                                   
 TEST_URL = "http://www.gstatic.com/generate_204"           
 # ==========================================
@@ -80,7 +81,7 @@ def is_valid_node_format(node: str) -> bool:
             if not isinstance(data, dict): return False
             if not data.get("add") or not data.get("port") or not data.get("id"): return False
             for v in data.values():
-                if v is None: return False # 拦截导致 Go Panic 的 null 值
+                if v is None: return False
             return True
         except Exception: return False
             
@@ -128,44 +129,46 @@ def test_proxy_delay(api_port, proxy_name, timeout_ms):
     except Exception: pass
     return None, None
 
-# 【核心新增】：伪装成本地网络订阅服务器，激活 Mihomo 原生解析引擎
+# 使用线程安全的 HTTP 服务器
 class SubscriptionHandler(http.server.BaseHTTPRequestHandler):
     payload = ""
     
     def do_GET(self):
+        payload_b64 = base64.b64encode(self.payload.encode('utf-8'))
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
+        # 【关键修复】：强制声明 Content-Length 和 Connection: close，防止 Mihomo 读取不完整
+        self.send_header("Content-Length", str(len(payload_b64)))
+        self.send_header("Connection", "close")
         self.end_headers()
-        # Mihomo 下载到 Base64 后，会自动解码并逐行解析 vmess/vless/trojan 等 URI
-        self.wfile.write(base64.b64encode(self.payload.encode('utf-8')))
+        self.wfile.write(payload_b64)
         
     def log_message(self, format, *args):
-        pass # 屏蔽 HTTP 服务器的默认日志输出
+        pass
 
 def process_chunk(chunk_nodes, timeout_ms, chunk_idx):
     valid_nodes = []
     api_port = get_free_port()
     
-    # 1. 准备负载并启动本地 HTTP 服务器
     sanitized_nodes = [sanitize_uri(n) for n in chunk_nodes]
     raw_text = "\n".join(sanitized_nodes)
     SubscriptionHandler.payload = raw_text
     
     try:
-        httpd = socketserver.TCPServer(("127.0.0.1", 0), SubscriptionHandler)
+        # 使用 ThreadingHTTPServer 提高稳定性
+        httpd = socketserver.ThreadingTCPServer(("127.0.0.1", 0), SubscriptionHandler)
     except OSError:
         time.sleep(1)
-        httpd = socketserver.TCPServer(("127.0.0.1", 0), SubscriptionHandler)
+        httpd = socketserver.ThreadingTCPServer(("127.0.0.1", 0), SubscriptionHandler)
         
     sub_port = httpd.server_address[1]
     server_thread = threading.Thread(target=httpd.serve_forever)
     server_thread.daemon = True
     server_thread.start()
     
-    # 必须使用唯一的 cache 文件名，防止 Mihomo 缓存错乱
-    cache_file = f"./chunk_cache_{chunk_idx}.yaml"
+    # 【关键修复】：使用绝对唯一的临时缓存文件，彻底杜绝 Mihomo 缓存干扰
+    cache_file = tempfile.mktemp(suffix='.yaml')
     
-    # 【核心修改】：使用 type: http 指向我们本地的服务器
     config_yaml = f"""
 port: 7890
 socks-port: 7891
@@ -206,7 +209,6 @@ proxy-groups:
             return valid_nodes
             
         try:
-            # 给 Mihomo 留出 HTTP 下载和 Base64 解码的时间
             req = urllib.request.Request(f"http://127.0.0.1:{api_port}/providers/proxies/chunk-provider", method="GET")
             with urllib.request.urlopen(req, timeout=5) as res:
                 data = json.loads(res.read().decode())
@@ -248,7 +250,6 @@ proxy-groups:
     except Exception as e:
         logger.error(f"Error processing chunk: {e}")
     finally:
-        # 严格清理 HTTP 服务器和进程
         try:
             httpd.shutdown()
             server_thread.join(timeout=2)
