@@ -35,7 +35,7 @@ jobs:
           python -c "
           import os
           os.environ['GITHUB_ACTIONS'] = 'true'
-          from validate_nodes_mihomo import download_mihomo_core
+          from debug_nodes_mihomo import download_mihomo_core
           download_mihomo_core()
           "
           
