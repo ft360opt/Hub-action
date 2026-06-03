@@ -14,6 +14,7 @@
     "GmSSL/GmSSL-Nodejs",
     "HZ-PRE/appsc",
     "LikaiLee/rss-reader",
+    "LoneKingCode/free-proxy-db",
     "NeelLogic/Chinese-Zodiac-Finder",
     "OpenNetCN/clash",
     "Pawdroid/Free-servers",
@@ -63,6 +64,7 @@
     "styleless-oldboy528/ispip",
     "toml66l/fanqiang",
     "ts-sf/fly",
+    "vipxb/zhibo",
     "wansheng8/adblock",
     "wanwushequ/cfyxip",
     "xi0yu/n8n-nodes-minimax-unified",
@@ -70,5 +72,5 @@
     "yzgolden86/Qreminder",
     "zinan92/daily-newsletter"
   ],
-  "updated_at": "2026-06-02 23:12:46"
+  "updated_at": "2026-06-03 00:21:46"
 }
