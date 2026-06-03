@@ -5,7 +5,7 @@
       "stars": 886,
       "forks": 125,
       "extracted_nodes": 3000,
-      "valid_nodes": 241,
+      "valid_nodes": 254,
       "quality_score": 100
     },
     {
@@ -17,11 +17,19 @@
       "quality_score": 100
     },
     {
+      "repository": "peasoft/NoMoreWalls",
+      "stars": 3294,
+      "forks": 524,
+      "extracted_nodes": 278,
+      "valid_nodes": 47,
+      "quality_score": 100
+    },
+    {
       "repository": "PuddinCat/BestClash",
       "stars": 1647,
       "forks": 105,
       "extracted_nodes": 16,
-      "valid_nodes": 13,
+      "valid_nodes": 12,
       "quality_score": 100
     },
     {
@@ -36,8 +44,8 @@
       "repository": "MohammadBahemmat/V2ray-Collector",
       "stars": 42,
       "forks": 55,
-      "extracted_nodes": 449,
-      "valid_nodes": 16,
+      "extracted_nodes": 213,
+      "valid_nodes": 14,
       "quality_score": 93.6
     },
     {
@@ -45,7 +53,7 @@
       "stars": 50,
       "forks": 6,
       "extracted_nodes": 399,
-      "valid_nodes": 193,
+      "valid_nodes": 192,
       "quality_score": 86.0
     },
     {
@@ -73,14 +81,6 @@
       "quality_score": 40.8
     },
     {
-      "repository": "yxx0234/url",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 41,
-      "valid_nodes": 29,
-      "quality_score": 40.0
-    },
-    {
       "repository": "cbusifabcap/daily_free_vpn",
       "stars": 12,
       "forks": 2,
@@ -89,7 +89,31 @@
       "quality_score": 11.6
     },
     {
-      "repository": "644646497/rss",
+      "repository": "xiaolong-nihao/IPTV-api",
+      "stars": 5,
+      "forks": 0,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 4.0
+    },
+    {
+      "repository": "BadKid90s/AureStream",
+      "stars": 2,
+      "forks": 0,
+      "extracted_nodes": 0,
+      "valid_nodes": 0,
+      "quality_score": 1.6
+    },
+    {
+      "repository": "644646497/proxy-scraper",
+      "stars": 1,
+      "forks": 0,
+      "extracted_nodes": 42,
+      "valid_nodes": 0,
+      "quality_score": 0.8
+    },
+    {
+      "repository": "docenxx1/10_top_vpn",
       "stars": 1,
       "forks": 0,
       "extracted_nodes": 0,
@@ -97,37 +121,13 @@
       "quality_score": 0.8
     },
     {
-      "repository": "ZHENHUA001A307/link-to-RSS",
-      "stars": 0,
+      "repository": "docenxx1/2026vpn",
+      "stars": 1,
       "forks": 0,
       "extracted_nodes": 0,
       "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "ThornsW/IP-check2ippure",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "peng-123258/python-argo",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
-    },
-    {
-      "repository": "feiniaovpn/Office---VPN",
-      "stars": 0,
-      "forks": 0,
-      "extracted_nodes": 0,
-      "valid_nodes": 0,
-      "quality_score": 0.0
+      "quality_score": 0.8
     }
   ],
-  "updated_at": "2026-06-03 02:25:16"
+  "updated_at": "2026-06-03 02:34:41"
 }
