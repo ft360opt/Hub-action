@@ -13,11 +13,10 @@ import platform
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ================= 配置区 =================
-# 必须加上 "./" 前缀，强制 Linux 在当前目录查找可执行文件
 MIHOMO_BINARY = os.environ.get("MIHOMO_BINARY", "./mihomo")
-CHUNK_SIZE = 500                                           # 每批处理节点数，避免 GitHub Actions OOM
-API_STARTUP_TIMEOUT = 30                                   # API 启动等待超时(秒)
-TEST_URL = "http://www.gstatic.com/generate_204"           # 测速目标 URL
+CHUNK_SIZE = 500                                           
+API_STARTUP_TIMEOUT = 30                                   
+TEST_URL = "http://www.gstatic.com/generate_204"           
 # ==========================================
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -77,17 +76,14 @@ def is_valid_node_format(node: str) -> bool:
     if scheme == "vmess":
         try:
             payload = rest
-            # 修复 base64 padding
             payload += "=" * ((4 - len(payload) % 4) % 4)
             decoded = base64.b64decode(payload).decode('utf-8')
             data = json.loads(decoded)
-            # 必须包含核心字段，否则 Mihomo ConvertsV2Ray 会 panic
             return bool(data.get("add") and data.get("port") and data.get("id"))
         except Exception:
             return False
             
     elif scheme in ("ss", "ssr", "trojan", "vless", "hysteria", "hysteria2", "tuic", "snell"):
-        # 其他协议至少保证非空且包含基本的分隔符
         return len(rest) > 10 and (":" in rest or "@" in rest)
         
     return True
@@ -127,7 +123,7 @@ def test_proxy_delay(api_port, proxy_name, timeout_ms):
     url = f"http://127.0.0.1:{api_port}/proxies/{encoded_name}/delay?url={urllib.parse.quote(TEST_URL)}&timeout={timeout_ms}"
     try:
         req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=8) as res: # 提高 urllib 本身的超时容忍度
+        with urllib.request.urlopen(req, timeout=8) as res:
             data = json.loads(res.read().decode())
             if "delay" in data and data["delay"] > 0:
                 return proxy_name, data["delay"]
@@ -140,9 +136,10 @@ def process_chunk(chunk_nodes, timeout_ms):
     valid_nodes = []
     api_port = get_free_port()
     
-    b64_payload = base64.b64encode("\n".join(chunk_nodes).encode('utf-8')).decode('utf-8')
+    # 【核心修复】：type: file 的 proxy-providers 不支持 Base64 自动解码！
+    # 必须直接写入明文（每行一个节点链接），Mihomo 才能正确解析。
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-        f.write(b64_payload)
+        f.write("\n".join(chunk_nodes))
         sub_file = f.name
         
     config_yaml = f"""
@@ -182,13 +179,11 @@ proxy-groups:
             req = urllib.request.Request(f"http://127.0.0.1:{api_port}/providers/proxies/chunk-provider", method="GET")
             with urllib.request.urlopen(req, timeout=3) as res:
                 data = json.loads(res.read().decode())
-                # 过滤掉 Mihomo 内置的虚拟代理
                 provider_proxies = [p for p in data.get("proxies", []) if p["name"] not in ("DIRECT", "REJECT", "GLOBAL")]
         except Exception as e:
             logger.error(f"Failed to get provider proxies from API: {e}")
             return valid_nodes
 
-        # 安全断言：预清洗后，这两者长度应该严格相等，保证索引映射 100% 准确
         if len(provider_proxies) != len(chunk_nodes):
             logger.warning(f"Proxy count mismatch! Expected {len(chunk_nodes)}, got {len(provider_proxies)}. Mapping might be inaccurate.")
 
@@ -203,7 +198,6 @@ proxy-groups:
                     idx = futures[future]
                     proxy_name, delay = future.result()
                     if proxy_name:
-                        # 因为预清洗保证了顺序和数量一致，这里的 idx 可以安全映射回原始链接
                         valid_nodes.append(chunk_nodes[idx])
                         
     except Exception as e:
@@ -236,7 +230,6 @@ def validate_nodes_with_mihomo(input_file: str, timeout_ms: int = 5000) -> list:
         logger.error(f"Failed to read input file: {e}")
         return []
         
-    # 核心修复：预清洗，剔除会导致 Mihomo Panic 的坏节点
     clean_nodes = [node for node in raw_nodes if is_valid_node_format(node)]
     filtered_count = len(raw_nodes) - len(clean_nodes)
     if filtered_count > 0:
