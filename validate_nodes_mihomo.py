@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import logging
 import platform
+import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ================= 配置区 =================
@@ -53,16 +54,13 @@ def download_mihomo_core():
         raise
 
 def sanitize_uri(uri: str) -> str:
-    """URI 净化器：修复未编码的中文备注、空格等导致 Mihomo 解析失败的脏数据"""
     if '#' in uri:
         main, frag = uri.split('#', 1)
-        # 强制对 # 后面的备注进行 URL 编码，防止空格和中文导致解析截断
         safe_frag = urllib.parse.quote(frag)
         return f"{main}#{safe_frag}"
     return uri
 
 def is_valid_node_format(node: str) -> bool:
-    """严格的预清洗：白名单机制 + 结构校验"""
     if not node or "://" not in node: return False
     scheme, _, rest = node.partition("://")
     scheme = scheme.lower()
@@ -73,19 +71,19 @@ def is_valid_node_format(node: str) -> bool:
     if scheme == "vmess":
         try:
             payload = rest.split('?')[0].split('#')[0]
-            payload += "=" * ((4 - len(payload) % 4) % 4) # 修复 Padding
+            payload += "=" * ((4 - len(payload) % 4) % 4)
             decoded = base64.b64decode(payload).decode('utf-8', errors='ignore')
             data = json.loads(decoded)
             if not isinstance(data, dict): return False
             if not data.get("add") or not data.get("port") or not data.get("id"): return False
             for v in data.values():
-                if v is None: return False # 防止 Go Panic
+                if v is None: return False
             return True
         except Exception: return False
             
     elif scheme in ("vless", "trojan"):
         try:
-            parsed = urllib.parse.urlparse(node.split('#')[0]) # 解析时去掉备注
+            parsed = urllib.parse.urlparse(node.split('#')[0])
             return bool(parsed.hostname and parsed.port and parsed.username)
         except Exception: return False
 
@@ -131,7 +129,6 @@ def process_chunk(chunk_nodes, timeout_ms):
     valid_nodes = []
     api_port = get_free_port()
     
-    # 写入前进行净化
     sanitized_nodes = [sanitize_uri(n) for n in chunk_nodes]
     raw_text = "\n".join(sanitized_nodes)
     
@@ -139,11 +136,12 @@ def process_chunk(chunk_nodes, timeout_ms):
         f.write(raw_text)
         sub_file = f.name
         
+    # 【关键修改】：将 log-level 改为 info，捕获所有解析警告
     config_yaml = f"""
 port: 7890
 socks-port: 7891
 external-controller: 127.0.0.1:{api_port}
-log-level: error
+log-level: info
 proxy-providers:
   chunk-provider:
     type: file
@@ -188,17 +186,28 @@ proxy-groups:
 
         if len(provider_proxies) != len(chunk_nodes):
             logger.warning(f"Proxy count mismatch! Expected {len(chunk_nodes)}, got {len(provider_proxies)}.")
-            # 诊断：打印 Mihomo 丢弃节点的真实原因
             try:
                 with open(log_file_name, 'r', encoding='utf-8') as lf:
-                    errors = [line.strip() for line in lf if line.strip()]
-                    if errors:
-                        logger.warning(f"Mihomo rejected nodes due to:")
-                        # 去重并打印前 3 种错误类型
-                        unique_errors = list(set([e.split('msg=')[-1] if 'msg=' in e else e for e in errors]))[:3]
+                    logs = [line.strip() for line in lf if line.strip()]
+                    # 提取包含解析失败关键字的日志
+                    parse_errors = [l for l in logs if any(k in l.lower() for k in ['parse', 'fail', 'error', 'unsupported', 'invalid', 'reject', 'unknown'])]
+                    if parse_errors:
+                        logger.warning(f"Mihomo rejected nodes. Sample errors:")
+                        unique_errors = list(set([e.split('msg=')[-1].strip('"') if 'msg=' in e else e for e in parse_errors]))[:5]
                         for err in unique_errors:
                             logger.warning(f"  > {err}")
-            except Exception: pass
+                    elif logs:
+                        logger.warning(f"Mihomo log (no specific parse errors found, showing raw):")
+                        for l in logs[:3]:
+                            logger.warning(f"  > {l}")
+            except Exception as e:
+                logger.warning(f"Failed to read Mihomo log: {e}")
+                
+            # 【终极诊断】：抽样打印被 Python 认为 valid，但被 Mihomo 丢弃的节点真面目
+            samples = random.sample(chunk_nodes, min(3, len(chunk_nodes)))
+            logger.warning(f"Sample 'valid' nodes that Mihomo might be rejecting:")
+            for s in samples:
+                logger.warning(f"  > {s[:120]}...")
 
         if provider_proxies:
             with ThreadPoolExecutor(max_workers=50) as executor:
@@ -210,7 +219,6 @@ proxy-groups:
                     idx = futures[future]
                     proxy_name, delay = future.result()
                     if proxy_name:
-                        # 注意：这里必须取原始未净化的 chunk_nodes，保证输出给用户的是原汁原味的链接
                         valid_nodes.append(chunk_nodes[idx])
                         
     except Exception as e:
