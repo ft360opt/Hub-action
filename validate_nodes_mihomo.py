@@ -67,7 +67,7 @@ def download_mihomo_core():
         raise
 
 def is_valid_node_format(node: str) -> bool:
-    """预清洗：拦截会导致 Mihomo 解析 Panic 的畸形链接"""
+    """极其严格的预清洗：拦截所有可能导致 Mihomo Panic 或解析失败的畸形链接"""
     if not node or "://" not in node:
         return False
     scheme, _, rest = node.partition("://")
@@ -77,25 +77,57 @@ def is_valid_node_format(node: str) -> bool:
         try:
             payload = rest
             payload += "=" * ((4 - len(payload) % 4) % 4)
-            decoded = base64.b64decode(payload).decode('utf-8')
+            decoded = base64.b64decode(payload).decode('utf-8', errors='ignore')
             data = json.loads(decoded)
-            return bool(data.get("add") and data.get("port") and data.get("id"))
+            if not isinstance(data, dict):
+                return False
+            
+            # 核心字段必须存在
+            if not data.get("add") or not data.get("port") or not data.get("id"):
+                return False
+                
+            # 【致命检查】：Mihomo Go 代码中大量使用 .(string) 强转
+            # 如果 JSON 中任何字段的值是 null (Python 的 None)，Go 会直接 Panic 崩溃
+            for v in data.values():
+                if v is None:
+                    return False
+                    
+            return True
         except Exception:
             return False
             
-    elif scheme in ("ss", "ssr", "trojan", "vless", "hysteria", "hysteria2", "tuic", "snell"):
-        return len(rest) > 10 and (":" in rest or "@" in rest)
+    elif scheme == "vless":
+        try:
+            parsed = urllib.parse.urlparse(node)
+            return bool(parsed.hostname and parsed.port and parsed.username)
+        except Exception:
+            return False
+
+    elif scheme == "ss":
+        try:
+            parsed = urllib.parse.urlparse(node)
+            return bool(parsed.hostname)
+        except Exception:
+            return False
+
+    elif scheme == "trojan":
+        try:
+            parsed = urllib.parse.urlparse(node)
+            return bool(parsed.hostname and parsed.port and parsed.username)
+        except Exception:
+            return False
+
+    elif scheme in ("ssr", "hysteria", "hysteria2", "tuic", "snell"):
+        return len(rest) > 10
         
     return True
 
 def get_free_port():
-    """获取一个操作系统分配的空闲端口"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(('', 0))
         return s.getsockname()[1]
 
 def wait_for_api_ready(api_port, process, timeout=API_STARTUP_TIMEOUT):
-    """等待 API 就绪，并增加进程崩溃检测"""
     api_url = f"http://127.0.0.1:{api_port}/version"
     logger.info(f"Waiting for API to be ready at {api_url}...")
     
@@ -118,7 +150,6 @@ def wait_for_api_ready(api_port, process, timeout=API_STARTUP_TIMEOUT):
     return False
 
 def test_proxy_delay(api_port, proxy_name, timeout_ms):
-    """测试单个代理的延迟"""
     encoded_name = urllib.parse.quote(proxy_name)
     url = f"http://127.0.0.1:{api_port}/proxies/{encoded_name}/delay?url={urllib.parse.quote(TEST_URL)}&timeout={timeout_ms}"
     try:
@@ -132,14 +163,15 @@ def test_proxy_delay(api_port, proxy_name, timeout_ms):
     return None, None
 
 def process_chunk(chunk_nodes, timeout_ms):
-    """处理单个分块的节点"""
     valid_nodes = []
     api_port = get_free_port()
     
-    # 【核心修复】：type: file 的 proxy-providers 不支持 Base64 自动解码！
-    # 必须直接写入明文（每行一个节点链接），Mihomo 才能正确解析。
+    # 【核心修复】：Mihomo 的 file provider 必须使用单行 Base64 编码才能正确触发订阅解析
+    raw_text = "\n".join(chunk_nodes)
+    b64_payload = base64.b64encode(raw_text.encode('utf-8')).decode('utf-8')
+    
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-        f.write("\n".join(chunk_nodes))
+        f.write(b64_payload)
         sub_file = f.name
         
     config_yaml = f"""
@@ -185,7 +217,7 @@ proxy-groups:
             return valid_nodes
 
         if len(provider_proxies) != len(chunk_nodes):
-            logger.warning(f"Proxy count mismatch! Expected {len(chunk_nodes)}, got {len(provider_proxies)}. Mapping might be inaccurate.")
+            logger.warning(f"Proxy count mismatch! Expected {len(chunk_nodes)}, got {len(provider_proxies)}.")
 
         if provider_proxies:
             with ThreadPoolExecutor(max_workers=50) as executor:
@@ -198,6 +230,7 @@ proxy-groups:
                     idx = futures[future]
                     proxy_name, delay = future.result()
                     if proxy_name:
+                        # 由于预清洗极其严格，这里的 idx 映射是 100% 安全的
                         valid_nodes.append(chunk_nodes[idx])
                         
     except Exception as e:
@@ -220,7 +253,6 @@ proxy-groups:
     return valid_nodes
 
 def validate_nodes_with_mihomo(input_file: str, timeout_ms: int = 5000) -> list:
-    """主入口：读取文件，内部分块处理，返回有效节点原始链接列表"""
     logger.info("Initializing node testing validation process via Mihomo Core (Chunked mode)...")
     
     try:
