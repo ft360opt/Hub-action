@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 #from validate_nodes_mihomo import validate_nodes_with_mihomo
-from debug_nodes_mihomo import validate_nodes_with_mihomo
+#from debug_nodes_mihomo import validate_nodes_with_mihomo
 
 # External Libraries
 import requests
@@ -552,9 +552,10 @@ def main():
         logger.error(f"Failed to write raw nodes file: {e}")
  
     # 2. 尝试 Mihomo 验证 (修复参数传递：第一个参数接收文件路径字符串，第二个接收超时时间)
-    logger.info("Initializing node testing validation process via Mihomo Core...")
+    #logger.info("Initializing node testing validation process via Mihomo Core...")
     valid_nodes_list = []
-    mihomo_results = validate_nodes_with_mihomo(str(node_all_path), timeout_ms=int(TIMEOUT_SECONDS * 1000))
+    #mihomo_results = validate_nodes_with_mihomo(str(node_all_path), timeout_ms=int(TIMEOUT_SECONDS * 1000))
+    mihomo_results = False
     
     if mihomo_results:
         # Mihomo 成功
